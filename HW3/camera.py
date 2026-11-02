@@ -24,7 +24,7 @@ class TrackballCamera:
         self.beginv = 0
 
         self.trackball_size = 0.6
-        self.rotation_speed = 2.0
+        self.rotation_speed = 1.0
         self.pan_speed = 4.0
         self.dolly_speed = 15.0
 
@@ -66,7 +66,7 @@ class TrackballCamera:
 
         axis = [p2[1]*p1[2]-p2[2]*p1[1],
                 p2[2]*p1[0]-p2[0]*p1[2],
-                p2[0]*p1[1]-p2[0]*p1[1]]
+                p2[0]*p1[1]-p2[1]*p1[0]]
 
         difference = [p1[0] - p2[0], p1[1] - p2[1], p1[2] - p2[2]]
         t = math.sqrt(sum(difference[i]**2 for i in range(3))) / (2.0 * self.trackball_size) #현의 길이 / 2r = sin(theta/2)
