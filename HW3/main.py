@@ -5,6 +5,7 @@ from pyglet.math import Vec3
 from pyglet.window import key, mouse
 from Bspline import BSpline
 from Ground import Ground
+from HUD import HUD
 from pathlib import Path
 
 center = Vec3(0, 0, 0)
@@ -12,7 +13,6 @@ eye = Vec3(8, 6, 8)
 fov = 60
 width = 960
 height = 720
-watch_mode = True
 
 mouseRotatePressed = False
 mouseMovePressed   = False
@@ -40,10 +40,23 @@ drag_offset = Vec3(0, 0, 0)
 
 ground = Ground(s=20)
 
+hud = HUD(window)
+u, t = 0.0, 0.0
+
+marker_program = pyglet.graphics.get_default_shader()
+marker = marker_program.vertex_list(
+    1,
+    GL_POINTS,
+    position="f",
+    colors=("Bn", (255, 220, 0, 255)),
+)
+
 @window.event
 def on_resize(width, height):
-    camera.resize( window, width, height )
-    return pyglet.event.EVENT_HANDLED
+
+	camera.resize( window, width, height )
+	hud.resize(width, height)
+	return pyglet.event.EVENT_HANDLED
 
 @window.event
 def on_draw():
@@ -54,7 +67,20 @@ def on_draw():
 
 	for spline in splines:
 		spline.draw()
-		if not watch_mode : spline.drawControlPoints()
+		if hud.show_frames : spline.drawFrames()
+		if not hud.watch_mode : spline.drawControlPoints()
+
+	# 현재 u의 위치
+	position, _ = splines[0].evaluate(u)
+	marker.position[:] = position
+
+	marker_program.use()
+	glPointSize(12.0)
+	marker.draw(GL_POINTS)
+	glPointSize(1.0)
+	marker_program.stop()
+
+	hud.draw()
 		
 @window.event
 def on_mouse_release( x, y, button, mods ):
@@ -81,7 +107,7 @@ def on_mouse_press( x, y, button, mods ):
 	elif button & pyglet.window.mouse.LEFT:
 		for spline in splines : spline.picked = -1 # 이전 선택 해제
 
-		if not watch_mode : active_spline, index = selectPoint(x, y)
+		if not hud.watch_mode : active_spline, index = selectPoint(x, y)
 		if active_spline is  None: 
 			camera.begin_rotate(x, y)
 			mouseRotatePressed = True
@@ -129,11 +155,11 @@ def on_key_press(key, modifiers):
 		pyglet.app.exit()
 
 	elif key == pyglet.window.key.S and modifiers & pyglet.window.key.MOD_CTRL:
-		if watch_mode : return
+		if hud.watch_mode : return
 		for i, spline in enumerate(splines): spline.saveCurve(f"tracks/spline_{i:03d}.json")
 		print("저장되었습니다.")
 	elif key == pyglet.window.key.ENTER :
-		if watch_mode : return
+		if hud.watch_mode : return
 		if active_spline is None or active_spline.picked < 0: return
 
 		i = active_spline.picked
@@ -145,17 +171,21 @@ def on_key_press(key, modifiers):
 		points.insert(i + 1, list((a + b) * 0.5)) # 선택한 점 바로 뒤에 두 점의 중점 넣기
 		active_spline.updateCurve()
 	elif key == pyglet.window.key.N :
-		if watch_mode : return
+		if hud.watch_mode : return
 		if active_spline is None or active_spline.picked < 0: return
 		active_spline.picked += 1
 	elif key == pyglet.window.key.X :
-		if watch_mode : return
+		if hud.watch_mode : return
 		if active_spline is None or active_spline.picked < 0: return
 		if len(active_spline.points) <= 4 : return
 		i = active_spline.picked
 		active_spline.points.pop(i)
 		active_spline.picked = i % len(active_spline.points)
 		active_spline.updateCurve()
+	elif key == pyglet.window.key.F:
+		hud.toggleFrames()
+	elif key == pyglet.window.key.W:
+			hud.toggleWatchmode()
 
 def selectPoint(x, y, radius=10):
     camera.apply(window)
@@ -180,17 +210,18 @@ def selectPoint(x, y, radius=10):
 
     return selected_spline, selected_index
 
+def update_ut(dt) :
+	global u, t
+
+	limit = len(splines[0].points)
+	t += dt
+	u = t % limit
+	hud.setU(u, t)
 
 glClearColor(0.0, 0.1, 0.3, 1.0)
 glEnable(GL_DEPTH_TEST)
 glClearDepth(1.0)
 glDepthFunc(GL_LESS)
 
-print("""
-점 클릭 후 드래그 : xz 평면 상 옮기기
-Alt 누르고 점 클릭 후 드래그 : y축 방향 옮기기
-Enter : 선택한 점 뒤에 새 점 삽입
-Ctrl + S : 현재 control point 저장
-""")
-
+pyglet.clock.schedule_interval(update_ut, 1 / 60)
 pyglet.app.run()

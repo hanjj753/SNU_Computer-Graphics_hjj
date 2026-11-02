@@ -1,5 +1,6 @@
 from pathlib import Path
-from pyglet.gl import GL_LINE_STRIP, GL_POINTS, glPointSize
+from pyglet.gl import GL_LINE_STRIP, GL_POINTS, GL_LINES, glPointSize
+from pyglet.math import Vec3
 import pyglet
 import json
 
@@ -13,6 +14,8 @@ class BSpline() :
         self.vertex_list = None     # shader program의 vertex list
         self.point_vertex_list = None # point용 shader program vertex list
         self.picked = -1     # 선택된 점, 없으면 =1
+        self.frames = []        # frame 계산용 list
+        self.frame_vertex_list = None
         if len(points) == 0 : self.initCurve()
         else : self.updateCurve()
 
@@ -57,7 +60,7 @@ class BSpline() :
 
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-    def updateCurve(self, closed:bool=True) :
+    def updateCurve(self) :
         """ self.points에 변화가 생긴 뒤 이 함수를 호출하면 curve를 points에 따라 업데이트함. """
 
         def discretize(p0, p1, p2, p3) :
@@ -83,10 +86,9 @@ class BSpline() :
 
         for i in range(num-3): discretize(self.points[i], self.points[i+1], self.points[i+2], self.points[i+3])
 
-        if closed :
-            discretize(self.points[num-3], self.points[num-2], self.points[num-1], self.points[0])
-            discretize(self.points[num-2], self.points[num-1], self.points[0], self.points[1])
-            discretize(self.points[num-1], self.points[0], self.points[1], self.points[2])
+        discretize(self.points[num-3], self.points[num-2], self.points[num-1], self.points[0])
+        discretize(self.points[num-2], self.points[num-1], self.points[0], self.points[1])
+        discretize(self.points[num-1], self.points[0], self.points[1], self.points[2])
 
     def draw(self) :
 
@@ -142,3 +144,43 @@ class BSpline() :
         self.point_vertex_list.draw(GL_POINTS)
         glPointSize(1.0)
         program.stop()
+
+    def evaluate(self, u) :
+        """u에 따른 위치 P(u)와 기울기 P'(u) 계산
+        control points를 points에 모두 저장했기 때문에, |u| = i이라고 하면 i, i+1, i+2, i+3 이 만드는 curve를 parametrize 시킨다
+        """
+
+        n = len(self.points)
+        u = u % n
+
+        i = int(u)
+        t = u - i # 소수 부분
+        u_points = [Vec3(*self.points[(i + k) % n]) for k in range(4)]
+
+        b0 = (1.0-t)**3.0/6.0
+        b1 = (3.0*t*t*t - 6.0*t*t + 4.0)/6.0
+        b2 = (-3.0*t*t*t + 3*t*t + 3*t + 1)/6.0
+        b3 = t**3/6.0
+        weights = [b0, b1, b2, b3]
+        
+        d0 = -0.5*(1.0 - t)**2.0
+        d1 = 1.5*t*t - 2*t
+        d2 = -1.5*t*t + t + 0.5
+        d3 = 0.5*t*t
+        derivatives = [d0, d1, d2, d3]
+
+        position = Vec3(0, 0, 0)
+        derivative = Vec3(0, 0, 0)
+
+        for p, w, d in zip(u_points, weights, derivatives) :
+            position += p*w
+            derivative += p*d
+
+        return position, derivative
+
+    def buildFrames(self) :
+        pass
+
+    def drawFrames(self) :
+        pass
+
