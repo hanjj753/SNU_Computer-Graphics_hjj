@@ -10,8 +10,16 @@ Ctrl + 드래그: 확대/축소
 R: 카메라 초기화
 Q: 종료
 F: Frame 껐다 키기
-W: Watch Mode 껐다 키기
+W: Watch(편집) Mode 껐다 키기
 T: Timer 껐다 키기
+C: Camera 시점 바꾸기
+M: Marker 껐다 키기
+S: 중앙 spline 껏다 키기
+
+[Frame]
+T: 빨간색
+N: 초록색
+B: 파란색
 
 [편집 모드에서]
 점 드래그: XZ 이동
@@ -27,9 +35,12 @@ class HUD:
         self.window = window
         self.show_frames = True
         self.watch_mode = True
+        self.fp_mode = False
+        self.marker = False
+        self.os = True
         self.batch = pyglet.graphics.Batch()
 
-        self.u_label = pyglet.text.Label("u = 0.000, t = 0.000", font_size=13, anchor_x="left", anchor_y="top", color=(255, 220, 80, 255), batch=self.batch)
+        self.u_label = pyglet.text.Label("u = 0.000, t = 0.000, v = 0.000", font_size=13, anchor_x="left", anchor_y="top", color=(255, 220, 80, 255), batch=self.batch)
         self.help_label = pyglet.text.Label(HELP_TEXT, font_size=10, width=200, multiline=True, anchor_x="right", anchor_y="top", batch=self.batch)
 
         self.resize(window.width, window.height)
@@ -44,8 +55,17 @@ class HUD:
     def toggleWatchmode(self) :
         self.watch_mode = not self.watch_mode
 
-    def setU(self, u, t):
-        self.u_label.text = f"u = {u:.3f}, t = {t:.3f}"
+    def toggleMarker(self) :
+        self.marker = not self.marker
+
+    def toggleFPmode(self) :
+        self.fp_mode = not self.fp_mode
+
+    def toggleSpline(self) :
+        self.os = not self.os
+
+    def setUTV(self, u, t, v):
+        self.u_label.text = f"u = {u:.3f}, t = {t:.3f}, v={v:.3f}"
 
     def draw(self):
         window = self.window

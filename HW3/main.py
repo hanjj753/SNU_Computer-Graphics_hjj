@@ -1,10 +1,10 @@
 import pyglet
 from camera import TrackballCamera
 from pyglet.gl import *
-from pyglet.math import Vec3
-from pyglet.window import key, mouse
+from pyglet.math import Vec3, Mat4
 from Bspline import BSpline
 from Ground import Ground
+from Rail import Rails, CartTrain, trackAxes
 from HUD import HUD
 from pathlib import Path
 
@@ -13,6 +13,7 @@ eye = Vec3(8, 6, 8)
 fov = 60
 width = 960
 height = 720
+BASE_DIR = Path(__file__).resolve().parent
 
 mouseRotatePressed = False
 mouseMovePressed   = False
@@ -24,7 +25,7 @@ batch = pyglet.graphics.Batch()
 
 splines = []
 
-for path in sorted(Path("tracks").glob("spline_*.json")):
+for path in sorted(Path(BASE_DIR/"tracks").glob("spline_*.json")):
     spline = BSpline()
     spline.loadCurve(path)
     splines.append(spline)
@@ -38,10 +39,11 @@ drag_plane_y = 0.0
 HEIGHT_SPEED = 0.02
 drag_offset = Vec3(0, 0, 0)
 
-ground = Ground(s=20)
+ground = Ground(s=20, y=-1)
 
 hud = HUD(window)
-u, t = 0.0, 0.0
+u, t, s = 0.0, 0.0, 0.0 # inital
+timer_running = False
 
 marker_program = pyglet.graphics.get_default_shader()
 marker = marker_program.vertex_list(
@@ -50,6 +52,20 @@ marker = marker_program.vertex_list(
     position="f",
     colors=("Bn", (255, 220, 0, 255)),
 )
+
+train = CartTrain(BASE_DIR/"models", scale=0.1)
+
+rails = [Rails(spline, gauge=train.gauge,radius=0.006, drop=train.wheel_drop + 0.006) for spline in splines]
+
+def applyCamera() :
+	if not hud.fp_mode : camera.apply(window); return
+
+	spline = splines[0]
+	position = spline.evaluate(u)
+	_, up, forward = trackAxes(spline, u)
+
+	eye = position + up * 0.18 + forward * 0.04
+	window.view = Mat4.look_at(position=eye, target=eye + forward, up=up) #window.view를 설정하면 이게 opengl로 전달
 
 @window.event
 def on_resize(width, height):
@@ -61,24 +77,28 @@ def on_resize(width, height):
 @window.event
 def on_draw():
 	window.clear()
-	camera.apply(window)
+	applyCamera()
 	batch.draw()
 	ground.draw()
 
 	for spline in splines:
-		spline.draw()
-		if hud.show_frames : spline.drawFrames()
+		if hud.os : spline.draw()
+		if hud.show_frames : spline.drawFrames(u=u)
 		if not hud.watch_mode : spline.drawControlPoints()
 
-	# 현재 u의 위치
-	position, _ = splines[0].evaluate(u)
-	marker.position[:] = position
+	for rail in rails: rail.draw()
+	train.draw(splines[0], u)
 
-	marker_program.use()
-	glPointSize(12.0)
-	marker.draw(GL_POINTS)
-	glPointSize(1.0)
-	marker_program.stop()
+	# 현재 u의 위치
+	if hud.marker :
+		position = splines[0].evaluate(u)
+		marker.position[:] = position
+
+		marker_program.use()
+		glPointSize(12.0)
+		marker.draw(GL_POINTS)
+		glPointSize(1.0)
+		marker_program.stop()
 
 	hud.draw()
 		
@@ -99,6 +119,8 @@ def on_mouse_press( x, y, button, mods ):
 	mouseMovePressed = False
 	mouseDollyPressed = False
 	drag_mode = None
+
+	if hud.fp_mode: return
 
 	if button & pyglet.window.mouse.LEFT and mods & pyglet.window.key.MOD_SHIFT:
 		mouseMovePressed   = True
@@ -124,6 +146,9 @@ def on_mouse_press( x, y, button, mods ):
 
 @window.event
 def on_mouse_drag( x, y, dx, dy, button, mods ):	
+
+	if hud.fp_mode: return
+
 	if mouseRotatePressed:
 		camera.rotate(x, y)
 	elif mouseMovePressed:
@@ -144,7 +169,7 @@ def on_mouse_drag( x, y, dx, dy, button, mods ):
 
 @window.event
 def on_key_press(key, modifiers):
-	global drag_mode, active_spline
+	global drag_mode, active_spline, timer_running
 	
 	if key == pyglet.window.key.R:
 		camera.reset()
@@ -185,7 +210,15 @@ def on_key_press(key, modifiers):
 	elif key == pyglet.window.key.F:
 		hud.toggleFrames()
 	elif key == pyglet.window.key.W:
-			hud.toggleWatchmode()
+		hud.toggleWatchmode()
+	elif key == pyglet.window.key.T:
+		timer_running = not timer_running
+	elif key == pyglet.window.key.C:
+		hud.toggleFPmode()
+	elif key == pyglet.window.key.M:
+		hud.toggleMarker()
+	elif key == pyglet.window.key.S:
+		hud.toggleSpline()
 
 def selectPoint(x, y, radius=10):
     camera.apply(window)
@@ -210,18 +243,20 @@ def selectPoint(x, y, radius=10):
 
     return selected_spline, selected_index
 
-def update_ut(dt) :
-	global u, t
+def update_utv(dt) :
+	global u, t, s
 
-	limit = len(splines[0].points)
-	t += dt
-	u = t % limit
-	hud.setU(u, t)
+	if timer_running : 
+		t += dt
+		v = splines[0].velocity(u)
+		s += v*dt
+		u = splines[0].dist2u(s)
+		hud.setUTV(u, t, v)
 
 glClearColor(0.0, 0.1, 0.3, 1.0)
 glEnable(GL_DEPTH_TEST)
 glClearDepth(1.0)
 glDepthFunc(GL_LESS)
 
-pyglet.clock.schedule_interval(update_ut, 1 / 60)
+pyglet.clock.schedule_interval(update_utv, 1 / 60)
 pyglet.app.run()

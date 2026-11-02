@@ -1,0 +1,26 @@
+{
+  "gauge": 1.2,
+  "wheel_drop": 0.2,
+  "cars": [
+    {
+      "file": "car_0.obj",
+      "offset": 0.0
+    },
+    {
+      "file": "car_1.obj",
+      "offset": 2.2
+    },
+    {
+      "file": "car_2.obj",
+      "offset": 4.4
+    },
+    {
+      "file": "car_3.obj",
+      "offset": 6.6
+    },
+    {
+      "file": "car_4.obj",
+      "offset": 8.8
+    }
+  ]
+}
