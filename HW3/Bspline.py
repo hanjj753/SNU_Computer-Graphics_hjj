@@ -57,6 +57,13 @@ class BSpline() :
         self.quaternion_frame = None
         self.updateCurve()
 
+        saved_quaternion = data.get("quaternion")
+        if saved_quaternion is not None:
+            self.quaternion_frame.delete()
+            self.quaternion_frame = QuaternionFrame.fromDict(self, saved_quaternion)
+
+        self.use_quaternion = bool(data.get("use_quaternion", False))
+
     def saveCurve(self, path:Path|str=Path("tracks/spline_control_points.json")) :
         """Bspline의 points를 path에 저장"""
         if isinstance(path, str) : path = Path(path)
@@ -64,7 +71,9 @@ class BSpline() :
 
         data = {
             "resolution": self.resolution,
-            "points": [list(point) for point in self.points]
+            "points": [list(point) for point in self.points],
+            "use_quaternion": self.use_quaternion,
+            "quaternion": self.quaternion_frame.toDict(),
         }
 
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

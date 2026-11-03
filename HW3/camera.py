@@ -114,12 +114,12 @@ class TrackballCamera:
     def rotate(self, u, v) :
 
         # 이전 마우스 위치 정규화
-        previous_u = (self.width - 2.0*self.beginu) / self.width 
-        previous_v = (self.height - 2.0*self.beginv) / self.height
+        previous_u = -(self.width - 2.0*self.beginu) / self.width 
+        previous_v = -(self.height - 2.0*self.beginv) / self.height
 
         # 현재 마우스 위치 정규화
-        current_u = (self.width - 2.0*u) / self.width
-        current_v = (self.height - 2.0*v) / self.height
+        current_u = -(self.width - 2.0*u) / self.width
+        current_v = -(self.height - 2.0*v) / self.height
 
         q = self.trackball(previous_u, previous_v, current_u, current_v)
 
@@ -131,16 +131,13 @@ class TrackballCamera:
     def apply(self, window) :
     
         q = Quaternion(*self.quaternion)
-        to_center = Mat4.from_translation(self.center)
         center_offset = Vec3(-self.center.x, -self.center.y, -self.center.z) # 세계를 -center로 움직이면 center -> 0 즉 원점으로 옮겨짐.
-        dolly_offset = self.distance - self.initial_distance
+        initial_rotation = Mat4(*self.initial_view[:12], 0.0, 0.0, 0.0, 1.0) #처음 view에서 rotation만
 
         window.view = (
-            Mat4.from_translation(Vec3(self.tx, self.ty, self.tz)) @ # pan
-            Mat4.from_translation(Vec3(0, 0, -dolly_offset)) @ #dolly
-            self.initial_view @
-            to_center @
-            q.to_mat4() @
+            Mat4.from_translation(Vec3(self.tx, self.ty, self.tz-self.distance)) @ # pan
+            q.to_mat4().transpose() @
+            initial_rotation @
             Mat4.from_translation(center_offset)
         )
 

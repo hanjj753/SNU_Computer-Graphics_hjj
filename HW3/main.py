@@ -181,8 +181,8 @@ def on_key_press(key, modifiers):
 		pyglet.app.exit()
 
 	elif key == pyglet.window.key.S and modifiers & pyglet.window.key.MOD_CTRL:
-		if hud.watch_mode : return
-		for i, spline in enumerate(splines): spline.saveCurve(f"tracks/spline_{i:03d}.json")
+		
+		for i, spline in enumerate(splines): spline.saveCurve(BASE_DIR/"tracks"/f"spline_{i:03d}.json")
 		print("저장되었습니다.")
 	elif key == pyglet.window.key.ENTER :
 		if hud.watch_mode : return
@@ -234,7 +234,7 @@ def on_key_press(key, modifiers):
 		spline.use_quaternion = True
 
 		T, _, _ = spline.u2frame(u)
-		degrees = -5 if key == pyglet.window.key.J else 5
+		degrees = -30 if key == pyglet.window.key.J else 30
 
 		spline.quaternion_frame.rotateAt(u, T, degrees)
 

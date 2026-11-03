@@ -21,6 +21,5 @@
 - moving coordinate frame은 한 바퀴 돌고 오고 나면 오차가 심하게 발생 (당연히 처음 B랑 나중 B랑 같다는 수학적 보장이 없음)
 
 ## TODO
-- fog
 - trackball
 - 저장

@@ -138,3 +138,29 @@ class QuaternionFrame:
             self.controls[idx] = (rotation_q @ self.controls[idx]).normalize()
         
         self.delete() # 다시 그리기
+
+    def toDict(self):
+        return {
+            "subdivisions": round(1 / self.step),
+            "wrap_sign": self.wrap_sign,
+            "controls": [list(q) for q in self.controls],
+        }
+
+    @classmethod
+    def fromDict(cls, spline, data):
+        result = cls(spline, subdivisions=int(data["subdivisions"]))
+
+        rows = data["controls"]
+        if len(rows) != len(result.us): raise ValueError("Quaternion control 개수가 안 맞음")
+
+        controls = []
+        for row in rows:
+            q = Quaternion(*row)
+            controls.append(q.normalize())
+
+        result.controls = controls
+        result.wrap_sign = int(data["wrap_sign"])
+
+        if result.wrap_sign not in (-1, 1): raise ValueError("Wrap sign 오류")
+
+        return result
