@@ -250,7 +250,7 @@ class BSpline() :
             B = T.cross(N).normalize()
             frames.append((T, N, B))
 
-        # 추가 : 마지막에 회전이 한번에 꺾이는 것 방지로 남는 양만큼 분산 (AI한테 물어봄)
+        # 마지막에 회전이 한번에 꺾이는 것 방지로 남는 양만큼 분산
         T0, N0, B0 = frames[0]
         end_N = frames[-1][1]
 

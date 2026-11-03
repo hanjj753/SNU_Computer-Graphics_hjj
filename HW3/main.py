@@ -228,18 +228,31 @@ def on_key_press(key, modifiers):
 	elif key == pyglet.window.key.H:
 		hud.toggleQuaternionControls()
 	elif key in (pyglet.window.key.J, pyglet.window.key.L):
-		
-		timer_running = False # 타이머 멈추기
-		spline = splines[0]
-		spline.use_quaternion = True
+		timer_running = False
 
-		T, _, _ = spline.u2frame(u)
+		spline = splines[0]
+		qframe = spline.quaternion_frame
 		degrees = -30 if key == pyglet.window.key.J else 30
 
-		spline.quaternion_frame.rotateAt(u, T, degrees)
+		if modifiers & pyglet.window.key.MOD_SHIFT:
+			try: n = int(input(f"앞으로 회전할 제어구간 수 (1~{qframe.period}): "))
+			except: return
 
-		for rail in rails: 
-			if rail.spline is spline: rail.rebuild()
+			if not 1 <= n <= qframe.period: print(f"1~{qframe.period} 사이로 입력."); return
+			
+			spline.use_quaternion = True
+			subdivisions = round(1 / qframe.step)
+			qframe.rotateForward(u, n * subdivisions, degrees)
+
+		else:
+			# Shift 없는 J/L은 기존 동작
+			spline.use_quaternion = True
+			T, _, _ = spline.u2frame(u)
+			qframe.rotateAt(u, T, degrees)
+
+		for rail in rails:
+			if rail.spline is spline:
+				rail.rebuild()
 
 def selectPoint(x, y, radius=10):
     camera.apply(window)

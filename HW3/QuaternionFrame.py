@@ -164,3 +164,17 @@ class QuaternionFrame:
         if result.wrap_sign not in (-1, 1): raise ValueError("Wrap sign 오류")
 
         return result
+
+    def rotateForward(self, u, count, degrees):
+        if not 1 <= count <= len(self.controls): raise ValueError("회전할 quaternion 개수가 잘못됨.")
+
+        half = math.radians(degrees) / 2
+        local_roll = Quaternion(math.cos(half), math.sin(half), 0, 0)
+
+        start = math.ceil((u % self.period) / self.step)
+
+        for offset in range(count):
+            j = (start + offset) % len(self.controls)
+            self.controls[j] = (self.controls[j] @ local_roll).normalize()
+
+        self.delete()
