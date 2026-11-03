@@ -15,6 +15,9 @@ T: Timer 껐다 키기
 C: Camera 시점 바꾸기
 M: Marker 껐다 키기
 S: 중앙 spline 껏다 키기
+G: Moving / Quaternion 방식 전환
+H: control quaternion 표시
+J/L : quaternion frame 회전
 
 [Frame]
 T: 빨간색
@@ -37,7 +40,8 @@ class HUD:
         self.watch_mode = True
         self.fp_mode = False
         self.marker = False
-        self.os = True
+        self.os = True # 중앙 spline 껏다 키기
+        self.show_quaternion_controls = False
         self.batch = pyglet.graphics.Batch()
 
         self.u_label = pyglet.text.Label("u = 0.000, t = 0.000, v = 0.000", font_size=13, anchor_x="left", anchor_y="top", color=(255, 220, 80, 255), batch=self.batch)
@@ -63,6 +67,9 @@ class HUD:
 
     def toggleSpline(self) :
         self.os = not self.os
+
+    def toggleQuaternionControls(self) :
+        self.show_quaternion_controls = not self.show_quaternion_controls
 
     def setUTV(self, u, t, v):
         self.u_label.text = f"u = {u:.3f}, t = {t:.3f}, v={v:.3f}"

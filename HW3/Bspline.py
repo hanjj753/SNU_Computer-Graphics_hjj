@@ -1,6 +1,7 @@
 from pathlib import Path
 from pyglet.gl import GL_LINE_STRIP, GL_POINTS, GL_LINES, glPointSize
 from pyglet.math import Vec3
+from QuaternionFrame import QuaternionFrame, quaternion2Frame
 import pyglet
 import json
 import math
@@ -20,6 +21,8 @@ class BSpline() :
         self.frame_vertex_list = None
         self.energy = energy
         self.samples_per_line = samples_per_line
+        self.use_quaternion = False
+        self.quaternion_frame = None
         if len(points) == 0 : self.initCurve()
         else : self.updateCurve()
 
@@ -50,6 +53,8 @@ class BSpline() :
 
         self.points = points
         self.resolution = resolution
+        if self.quaternion_frame is not None: self.quaternion_frame.delete()
+        self.quaternion_frame = None
         self.updateCurve()
 
     def saveCurve(self, path:Path|str=Path("tracks/spline_control_points.json")) :
@@ -96,6 +101,9 @@ class BSpline() :
 
         self.buildArcLengthTable()
         self.buildFrames()
+
+        if self.quaternion_frame is not None: self.quaternion_frame.delete()
+        if self.quaternion_frame is None or self.quaternion_frame.period != len(self.points) : self.quaternion_frame = QuaternionFrame(self)
 
     def draw(self) :
 
@@ -264,7 +272,7 @@ class BSpline() :
         )
 
         if u is None:
-            items = [(self.frame_positions[i], self.frames[i]) for i in range(0, len(self.frames) - 1, stride)]
+            items = [(self.frame_positions[i], self.u2frame(self.u_table[i])) for i in range(0, len(self.frames) - 1, stride)]
         else:
             position = self.evaluate(u)
             items = [(position, self.u2frame(u))]
@@ -324,7 +332,7 @@ class BSpline() :
 
         return self.u_table[i] + alpha * (self.u_table[j] - self.u_table[i])
 
-    def u2frame(self, u:float) :
+    def movingFrame(self, u:float) :
         u %= len(self.points)
 
         T, _ = self.getDerivatives(u)
@@ -341,6 +349,14 @@ class BSpline() :
 
         return (T, N, B)
 
+    def u2frame(self, u:float) :
+        if not self.use_quaternion : return self.movingFrame(u)
+
+        q = self.quaternion_frame.evaluate(u)
+        T, N, B = quaternion2Frame(q) # T가 달라졌을 수도 있으니 
+
+        return T, N, B
+    
     def velocity(self, u):
         """u일 때 velocity 계산"""
         position = self.evaluate(u)

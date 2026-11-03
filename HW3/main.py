@@ -20,7 +20,7 @@ mouseMovePressed   = False
 mouseDollyPressed   = False
 
 camera = TrackballCamera(eye=eye, center=center, fov=fov)
-window = pyglet.window.Window( width, height, resizable=True, caption="Cornell Box")
+window = pyglet.window.Window( width, height, resizable=True, caption="Roller Coaster")
 batch = pyglet.graphics.Batch()
 
 splines = []
@@ -85,6 +85,7 @@ def on_draw():
 		if hud.os : spline.draw()
 		if hud.show_frames : spline.drawFrames(u=u)
 		if not hud.watch_mode : spline.drawControlPoints()
+		if hud.show_quaternion_controls: spline.quaternion_frame.drawControls(spline)
 
 	for rail in rails: rail.draw()
 	train.draw(splines[0], u)
@@ -219,6 +220,26 @@ def on_key_press(key, modifiers):
 		hud.toggleMarker()
 	elif key == pyglet.window.key.S:
 		hud.toggleSpline()
+	elif key == pyglet.window.key.G:
+		
+		for spline in splines: spline.use_quaternion = not spline.use_quaternion
+		for rail in rails: rail.rebuild()
+
+	elif key == pyglet.window.key.H:
+		hud.toggleQuaternionControls()
+	elif key in (pyglet.window.key.J, pyglet.window.key.L):
+		
+		timer_running = False # 타이머 멈추기
+		spline = splines[0]
+		spline.use_quaternion = True
+
+		T, _, _ = spline.u2frame(u)
+		degrees = -5 if key == pyglet.window.key.J else 5
+
+		spline.quaternion_frame.rotateAt(u, T, degrees)
+
+		for rail in rails: 
+			if rail.spline is spline: rail.rebuild()
 
 def selectPoint(x, y, radius=10):
     camera.apply(window)
