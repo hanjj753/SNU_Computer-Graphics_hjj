@@ -6,28 +6,75 @@ MATERIAL_PRESETS = {
     "wall_red": ((0.0, 0.0, 0.0), 16.0),
     "wall_green": ((0.0, 0.0, 0.0), 16.0),
 
-    "torus_mint": ((0.20, 0.20, 0.20), 48.0),
-    "Cup": ((0.35, 0.35, 0.35), 96.0),
-    "Water": ((0.50, 0.50, 0.50), 128.0),
+    "torus_mint": ((0.02, 0.02, 0.02), 10.0),
+    "Cup": ((0.04, 0.04, 0.04), 96.0),
+    "Water": ((0.025, 0.025, 0.025), 160.0),
 
-    "Default": ((0.08, 0.08, 0.08), 32.0),
+    "Default": ((0.008, 0.008, 0.008), 40.0),
+    "Ground": ((0.0, 0.0, 0.0), 16.0),
 }
 
 OPACITY_PRESETS = {
-    "Cup": 0.20,
+    "Cup": 0.22,
     "Water": 0.10,
 }
 
-def apply_material_preset(material) :
+# 현재 조명과 카메라에서 실물 사진에 맞춘 선형 RGB 보정값.
+# 사진의 조명과 색 번짐도 포함한 유효 색이며, 측정한 반사율은 아니다.
+DIFFUSE_PRESETS = {
+    "wall_white": (0.36, 0.33, 0.31),
+    "wall_red": (0.45, 0.080, 0.082),
+    "wall_green": (0.038, 0.066, 0.047),
+    "torus_mint": (0.23, 0.60, 0.42),
+    "Cup": (0.80, 0.64, 0.66),
+    "Water": (0.90, 0.95, 1.00),
+    "Ground": (0.30, 0.19, 0.10),
+}
+
+# 원본 OBJ에서는 바닥, 뒷벽, 천장이 같은 wall_white 재질을 쓴다.
+# 면마다 다른 조명 상태를 사진에 맞추기 위해 색을 따로 보정한다.
+MESH_DIFFUSE_PRESETS = {
+    "Floor_Cube.001": (0.97, 0.99, 0.90),
+    "Ceiling1_Cube.005": (0.48, 0.26, 0.26),
+    "Ceiling2_Cube.006": (0.48, 0.26, 0.26),
+    "Ceiling3_Cube.007": (0.48, 0.26, 0.26),
+    "Ceiling4_Cube.008": (0.48, 0.26, 0.26),
+}
+
+# 간접광을 실제로 추적하는 대신 ambient 항의 크기를 보정한다.
+# BRDF 계수와는 별개이며, 지정하지 않은 재질은 1.0을 사용한다.
+AMBIENT_SCALE_PRESETS = {
+    "Cup": 1.40,
+    "Pie_right": 0.04,
+    "Ground": 0.03,
+}
+
+MESH_AMBIENT_SCALE_PRESETS = {
+    "Floor_Cube.001": 0.12,
+}
+
+
+def apply_material_preset(material, mesh_name=None):
+    # 상자의 여섯 면은 기본 광택을 공유하고, 간접광 보정은 개별 적용한다.
+    name = "Default" if material.name.startswith("Pie_") else material.name
 
     specular, shininess = MATERIAL_PRESETS.get(
-        material.name, ((0.10, 0.10, 0.10), 32.0),
+        name, ((0.10, 0.10, 0.10), 32.0),
     )
 
     material.specular = (*specular, 1.0)
     material.shininess = shininess
-    opacity = OPACITY_PRESETS.get(material.name, 1.0)
-    material.diffuse = (*material.diffuse[:3], opacity) 
+    diffuse = DIFFUSE_PRESETS.get(name, material.diffuse[:3])
+    diffuse = MESH_DIFFUSE_PRESETS.get(mesh_name, diffuse)
+    opacity = OPACITY_PRESETS.get(name, 1.0)
+    material.diffuse = (*diffuse, opacity)
+
+    ambient_scale = AMBIENT_SCALE_PRESETS.get(
+        material.name, AMBIENT_SCALE_PRESETS.get(name, 1.0)
+    )
+    material.ambient_scale = MESH_AMBIENT_SCALE_PRESETS.get(
+        mesh_name, ambient_scale
+    )
 
 class PhongMaterialGroup(pyglet.model.MaterialGroup) :
 
@@ -36,6 +83,9 @@ class PhongMaterialGroup(pyglet.model.MaterialGroup) :
 
         self.program["specular_color"] = self.material.specular[:3]
         self.program["shininess"] = self.material.shininess
+        self.program["ambient_scale"] = getattr(
+            self.material, "ambient_scale", 1.0
+        )
 
         texture = getattr(self.material, "diffuse_texture", None)
         self.program["use_texture"] = texture is not None

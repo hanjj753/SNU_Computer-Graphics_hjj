@@ -15,9 +15,6 @@ out vec3 world_position;
 out vec3 world_normal;
 out vec4 vertex_color;
 out vec2 texcoord;
-out vec4 shadow_position;
-
-uniform mat4 light_view_projection;
 
 uniform WindowBlock
 {
@@ -30,7 +27,6 @@ uniform mat4 model;
 void main() 
 {
     vec4 position_world = model * vec4(POSITION, 1.0);
-    shadow_position = light_view_projection * position_world;
 
     mat3 normal_matrix = transpose(inverse(mat3(model)));
 
@@ -67,6 +63,7 @@ uniform int light_count;
 uniform vec3 light_color;
 uniform float light_intensity;
 uniform float ambient_strength;
+uniform float ambient_scale;
 
 uniform vec3 camera_position;
 uniform vec3 specular_color;
@@ -75,18 +72,29 @@ uniform float shininess;
 uniform bool use_texture;
 uniform sampler2D diffuse_texture;
 
-in vec4 shadow_position;
+uniform sampler2D shadow_maps[4];
+uniform mat4 light_view_projections[4];
 
-uniform sampler2D shadow_map;
-
-float shadow_visibility(vec3 N)
+// GLSL 330 제약에 맞춰 sampler 배열을 상수 인덱스로 읽는다.
+float read_shadow_depth(int i, vec2 uv)
 {
-    // 광원의 뒤쪽은 이 shadow map의 범위 밖이다.
-    if (shadow_position.w <= 0.0)
+    if (i == 0) return texture(shadow_maps[0], uv).r;
+    if (i == 1) return texture(shadow_maps[1], uv).r;
+    if (i == 2) return texture(shadow_maps[2], uv).r;
+    return texture(shadow_maps[3], uv).r;
+}
+
+float shadow_visibility(int i, vec3 N)
+{
+    // 현재 표면을 i번째 광원의 시점으로 변환한다.
+    vec4 light_position = (
+        light_view_projections[i] * vec4(world_position, 1.0)
+    );
+
+    if (light_position.w <= 0.0)
         return 1.0;
 
-    // Clip 좌표 → NDC → 텍스처 좌표 0~1
-    vec3 p = shadow_position.xyz / shadow_position.w;
+    vec3 p = light_position.xyz / light_position.w;
     p = p * 0.5 + 0.5;
 
     if (
@@ -96,21 +104,79 @@ float shadow_visibility(vec3 N)
     )
         return 1.0;
 
-    // 광원에서 봤을 때 이 위치에 저장된 가장 가까운 깊이
-    float closest_depth = texture(shadow_map, p.xy).r;
+    vec3 L = normalize(light_positions[i] - world_position);
 
-    vec3 L = normalize(
-        light_positions[0] - world_position
-    );
-
-    // 수치 오차로 자기 자신을 그림자로 판단하는 현상을 완화한다.
     float bias = max(
         0.0002 * (1.0 - max(dot(N, L), 0.0)),
         0.00003
     );
 
-    // 현재 표면이 저장된 깊이보다 뒤라면 다른 물체에 가려진 것이다.
-    return p.z - bias <= closest_depth ? 1.0 : 0.0;
+    // 네 깊이 맵의 해상도는 모두 같다.
+    vec2 texel_size = (
+        1.0 / vec2(textureSize(shadow_maps[0], 0))
+    );
+
+    float visibility = 0.0;
+
+    // i번째 광원의 깊이 맵에서 3×3 PCF를 수행한다.
+    for (int y = -1; y <= 1; y++)
+    {
+        for (int x = -1; x <= 1; x++)
+        {
+            vec2 offset = vec2(x, y) * texel_size;
+
+            float sample_depth = read_shadow_depth(
+                i, p.xy + offset
+            );
+
+            visibility += (
+                p.z - bias <= sample_depth
+            ) ? 1.0 : 0.0;
+        }
+    }
+
+    return visibility / 9.0;
+}
+
+vec3 evaluate_brdf(vec3 N, vec3 V, vec3 L, vec3 base_color)
+{
+    const float PI = 3.141592653589793;
+
+    // 표면 앞쪽에서 들어오고 나가는 빛만 다룬다.
+    if (dot(N, L) <= 0.0 || dot(N, V) <= 0.0)
+        return vec3(0.0);
+
+    // Ks: 정반사에 할당할 반사율.
+    vec3 Ks = clamp(
+        specular_color, vec3(0.0), vec3(1.0)
+    );
+
+    // 정반사에 할당한 몫을 제외하고 난반사색을 정한다.
+    // 각 RGB 성분에서 Kd + Ks가 1을 넘지 않게 한다.
+    vec3 Kd = (
+        clamp(base_color, vec3(0.0), vec3(1.0))
+        * (vec3(1.0) - Ks)
+    );
+
+    // Lambert 난반사 BRDF.
+    vec3 diffuse_brdf = Kd / PI;
+
+    // R: 입사광이 거울처럼 반사되는 방향.
+    vec3 R = reflect(-L, N);
+
+    // n이 클수록 하이라이트가 좁아진다.
+    float n = max(shininess, 1.0);
+    float alignment = max(dot(R, V), 0.0);
+
+    // 수정 Phong 모델의 정규화 계수를 적용한다.
+    vec3 specular_brdf = (
+        Ks
+        * ((n + 2.0) / (2.0 * PI))
+        * pow(alignment, n)
+    );
+
+    // 광원 세기, 거리 감쇠, N·L, 그림자는 밖에서 처리한다.
+    return diffuse_brdf + specular_brdf;
 }
 
 void main() {
@@ -129,49 +195,47 @@ void main() {
         base_color *= pow(texture_srgb, vec3(2.2));
     }
 
-    vec3 diffuse = vec3(0.0);
-    vec3 specular = vec3(0.0);
+        vec3 direct_lighting = vec3(0.0);
 
-    // 전체 광원의 세기를 각 점광원에 나눠준다.
+    // 광원 개수가 늘어나도 전체 광원 세기는 유지한다.
     float sample_intensity = (
         light_intensity / float(max(light_count, 1))
     );
 
-    for (int i=0;i<light_count;i++) {
-        // 표면에서 광원을 향하는 벡터
+    for (int i = 0; i < light_count; i++)
+    {
         vec3 light_vector = light_positions[i] - world_position;
         float distance_to_light = max(length(light_vector), 0.001);
-        vec3 L = light_vector / distance_to_light;   
-    
-        float lambert = max(dot(N, L), 0.0);
-        
-        float attenuation = 1.0 / (distance_to_light * distance_to_light);
-        
-        vec3 incoming_light = light_color * sample_intensity * attenuation;
-        
-        diffuse += base_color * incoming_light * lambert;
+        vec3 L = light_vector / distance_to_light;
 
-        // 빛을 받고 카메라를 향하는 면에서 광택 계산
-        if (lambert > 0.0 && dot(N, V) > 0.0) {
-            vec3 R = reflect(-L, N); // 법선 기준으로 반사시킴
+        float NdotL = max(dot(N, L), 0.0);
 
-            float highlight = pow(
-                max(dot(R, V), 0.0),
-                shininess
-            );
+        if (NdotL <= 0.0)
+            continue;
 
-            specular += ( //RenderingBasics 30p에 있는 식
-                specular_color * incoming_light * highlight
-            );
-        }
+        float attenuation = (
+            1.0 / (distance_to_light * distance_to_light)
+        );
+
+        vec3 incoming_light = (
+            light_color * sample_intensity * attenuation
+        );
+
+        float visibility = shadow_visibility(i, N);
+
+        // 재질이 이 방향의 빛을 얼마나 반사하는지 계산한다.
+        vec3 brdf = evaluate_brdf(N, V, L, base_color);
+
+        direct_lighting += (
+            brdf * incoming_light * NdotL * visibility
+        );
     }
 
-    vec3 ambient = ambient_strength * base_color;
-
-    float visibility = shadow_visibility(N);
+    // 기존의 간접광 근사값은 BRDF 밖에서 별도로 더한다.
+    vec3 ambient = ambient_strength * ambient_scale * base_color;
 
     vec3 linear_color = max(
-        ambient + visibility * (diffuse + specular),
+        ambient + direct_lighting,
         vec3(0.0)
     );
 

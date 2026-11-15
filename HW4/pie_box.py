@@ -4,7 +4,7 @@ from pyglet.gl import GL_TRIANGLES
 from pyglet.math import Vec3
 from pyglet.model import SimpleMaterial
 
-from materials import PhongMaterialGroup
+from materials import PhongMaterialGroup, apply_material_preset
 from uv_mapping import make_pie_uvs
 
 
@@ -68,6 +68,8 @@ def create_pie_faces(
             specular=tuple(base_material.specular),
             shininess=base_material.shininess,
         )
+        # 광택은 공통값을 쓰고, 사진에서 어두운 측면의 간접광은 따로 보정한다.
+        apply_material_preset(material)
         material.diffuse_texture = textures.get(face)
 
         group = PhongMaterialGroup(

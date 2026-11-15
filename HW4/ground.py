@@ -1,6 +1,6 @@
 from pyglet.gl import GL_TRIANGLES
 from pyglet.model import SimpleMaterial
-from materials import PhongMaterialGroup
+from materials import PhongMaterialGroup, apply_material_preset
 
 def create_ground(program, batch):
     half_size = 20.0
@@ -19,6 +19,8 @@ def create_ground(program, batch):
         specular=(0.0, 0.0, 0.0, 1.0),
         shininess=16.0,
     )
+    # 색과 간접광 보정값은 materials.py에서 함께 관리한다.
+    apply_material_preset(material)
     material.diffuse_texture = None
 
     group = PhongMaterialGroup(

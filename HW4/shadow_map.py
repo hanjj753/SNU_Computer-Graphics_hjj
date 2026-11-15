@@ -159,3 +159,41 @@ class ShadowMap:
 
         # 이후 이미지 텍스처 설정에 영향을 주지 않도록 복구한다.
         glActiveTexture(GL_TEXTURE0)
+
+class AreaShadowMaps:
+    def __init__(self, light_positions, size=2048):
+        # 이번 단계에서는 2×2, 총 4개의 광원을 사용한다.
+        if len(light_positions) != 4:
+            raise ValueError("AreaShadowMaps는 광원 4개가 필요합니다.")
+
+        self.maps = [
+            ShadowMap(Vec3(*position), size=size)
+            for position in light_positions
+        ]
+
+    def add_mesh(self, positions):
+        # 같은 물체를 네 광원 각각의 시점에서 그리도록 등록한다.
+        for shadow_map in self.maps:
+            shadow_map.add_mesh(positions)
+
+    def render(self):
+        # 광원마다 서로 다른 깊이 맵을 만든다.
+        for shadow_map in self.maps:
+            shadow_map.render()
+
+    def bind_to(self, program):
+        # 유닛 0은 이미지, 유닛 1~4는 그림자 텍스처다.
+        units = [1, 2, 3, 4]
+
+        for unit, shadow_map in zip(units, self.maps):
+            glActiveTexture(GL_TEXTURE0 + unit)
+            glBindTexture(GL_TEXTURE_2D, shadow_map.texture.id)
+
+        program["shadow_maps"] = units
+
+        # 각 깊이 맵을 만들 때 사용한 광원 행렬도 전달한다.
+        program["light_view_projections"] = [
+            shadow_map.light_vp for shadow_map in self.maps
+        ]
+
+        glActiveTexture(GL_TEXTURE0)

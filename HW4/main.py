@@ -8,16 +8,17 @@ from shader import create_program
 from ground import create_ground
 from linear_target import SrgbTarget
 from transparency import TransparentRenderer
-from shadow_map import ShadowMap
+from shadow_map import AreaShadowMaps
 from HUD import HUD
 from pathlib import Path
 from io import StringIO
+from copy import copy
 import re
 
 # 왼쪽 아래를 (0, 0, 0)으로 놓았을 때 Cornell box의 정 중앙의 좌표가 (1.45, 1.5, -1.5) 
 center = Vec3(1.45, 1.50, -1.50)
 eye = Vec3(1.45, 1.50, 5.00) # camera가 (1.45, 1.5, 5)
-fov = 60.8
+fov = 53.0  # 실물 사진에서 상자가 차지하는 비율에 맞춘 화각.
 
 width = 960
 height = 720
@@ -134,13 +135,12 @@ transparency = TransparentRenderer(program)
 vertex_lists = []
 
 MAX_LIGHTS = 64
-GRID_SIZE = 1
+GRID_SIZE = 2
 
 if not 1 <= GRID_SIZE <= 8:
     raise ValueError("GRID_SIZE는 1부터 8까지 사용할 수 있습니다.")
 
-light_center = Vec3(1.45, 2.95, -1.50)
-shadow = ShadowMap(light_center)
+light_center = Vec3(1.35, 2.95, -1.38)
 
 light_width = 0.60
 light_depth = 0.60
@@ -161,6 +161,7 @@ for i in range(GRID_SIZE):
             (x, light_center.y, z)
         )
 
+shadow = AreaShadowMaps(light_positions)
 light_count = len(light_positions)
 
 padded_positions = light_positions + [
@@ -170,9 +171,10 @@ padded_positions = light_positions + [
 program["light_positions"] = padded_positions
 program["light_count"] = light_count
 
-program["light_color"] = (1.0, 1.0, 1.0)
-program["light_intensity"] = 5.0
-program["ambient_strength"] = 0.20
+# 사진의 차가운 바닥 조명에 맞춘 선형 RGB 상대 세기.
+program["light_color"] = (0.75, 0.85, 1.15)
+program["light_intensity"] = 22.0
+program["ambient_strength"] = 0.38
 
 for node in scene.nodes:
 
@@ -208,8 +210,9 @@ for node in scene.nodes:
 
     for mesh in node.meshes:
         for primitive in mesh.primitives:
-            material = primitive.material
-            apply_material_preset(material)
+            # 흰색 재질을 공유하는 바닥과 천장의 설정을 독립적으로 유지한다.
+            material = copy(primitive.material)
+            apply_material_preset(material, mesh.name)
 
             positions = next(
                 attribute.array
