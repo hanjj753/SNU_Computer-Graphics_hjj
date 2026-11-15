@@ -1,0 +1,186 @@
+{
+  "back": {
+    "source": "D:\\Workspace\\Computer Graphics\\HW4\\textures\\chocopie_back.jpg",
+    "source_sha256": "94e4dd12fecd7c62a93255a5b042dd3a26d01561cc4bd1ecf50a450565c3fdb8",
+    "exif_orientation": 6,
+    "exif_normalized_size": [
+      3000,
+      4000
+    ],
+    "quad_tl_tr_br_bl": [
+      [
+        574,
+        1123
+      ],
+      [
+        2370,
+        1120
+      ],
+      [
+        2355,
+        3190
+      ],
+      [
+        600,
+        3183
+      ]
+    ],
+    "upright_size": [
+      1680,
+      2000
+    ],
+    "baked_counterclockwise_degrees": 0,
+    "output_size": [
+      1680,
+      2000
+    ],
+    "perspective_output_to_input_coefficients": [
+      1.062753917684978,
+      0.0200059608163847,
+      574.0,
+      -0.005061912197021135,
+      1.0676473800098605,
+      1123.0,
+      -2.924227100952177e-06,
+      1.1665762607931467e-05
+    ]
+  },
+  "right": {
+    "source": "D:\\Workspace\\Computer Graphics\\HW4\\textures\\chocopie_right.jpg",
+    "source_sha256": "8228ea49174eebe5d5fa4e2d5973370478ccd89dab86e83dc1b4b4ee19cad3a6",
+    "exif_orientation": 1,
+    "exif_normalized_size": [
+      4000,
+      3000
+    ],
+    "quad_tl_tr_br_bl": [
+      [
+        700,
+        1355
+      ],
+      [
+        3570,
+        1325
+      ],
+      [
+        3552,
+        2117
+      ],
+      [
+        755,
+        2110
+      ]
+    ],
+    "upright_size": [
+      2000,
+      480
+    ],
+    "baked_counterclockwise_degrees": 90,
+    "output_size": [
+      480,
+      2000
+    ],
+    "perspective_output_to_input_coefficients": [
+      1.3518787967346806,
+      0.15548422745775545,
+      700.0,
+      -0.04612424252164881,
+      1.6898376967724675,
+      1355.0,
+      -2.3484331146998407e-05,
+      5.385653044356979e-05
+    ]
+  },
+  "top": {
+    "source": "D:\\Workspace\\Computer Graphics\\HW4\\textures\\chocopie_top.jpg",
+    "source_sha256": "e3cd4417df309edaef1a50f605a3738077cecd4e64a682c4920c7209d750815d",
+    "exif_orientation": 1,
+    "exif_normalized_size": [
+      4000,
+      3000
+    ],
+    "quad_tl_tr_br_bl": [
+      [
+        10,
+        1310
+      ],
+      [
+        3980,
+        1275
+      ],
+      [
+        3940,
+        2210
+      ],
+      [
+        58,
+        2280
+      ]
+    ],
+    "upright_size": [
+      1680,
+      480
+    ],
+    "baked_counterclockwise_degrees": 90,
+    "output_size": [
+      480,
+      1680
+    ],
+    "perspective_output_to_input_coefficients": [
+      2.457330996553809,
+      0.10300248367161521,
+      10.0,
+      0.00889197290766712,
+      2.1348741079635873,
+      1310.0,
+      2.3323697584684235e-05,
+      4.816750697227254e-05
+    ]
+  },
+  "bottom": {
+    "source": "D:\\Workspace\\Computer Graphics\\HW4\\textures\\chocopie_bottom.jpg",
+    "source_sha256": "835c5260c1b74b3447e36ac4fe52ec113d7ed6244a21daeffc43bd611186b4d2",
+    "exif_orientation": 1,
+    "exif_normalized_size": [
+      4000,
+      3000
+    ],
+    "quad_tl_tr_br_bl": [
+      [
+        190,
+        1398
+      ],
+      [
+        3853,
+        1408
+      ],
+      [
+        3820,
+        2250
+      ],
+      [
+        215,
+        2278
+      ]
+    ],
+    "upright_size": [
+      1680,
+      480
+    ],
+    "baked_counterclockwise_degrees": 90,
+    "output_size": [
+      480,
+      1680
+    ],
+    "perspective_output_to_input_coefficients": [
+      2.2864820508262755,
+      0.05960122453015906,
+      190.0,
+      0.04426255348298656,
+      1.9156633622447679,
+      1398.0,
+      2.720641146056166e-05,
+      3.4461198717737396e-05
+    ]
+  }
+}
