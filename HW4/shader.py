@@ -55,12 +55,13 @@ in vec2 texcoord;
 
 out vec4 final_color;
 
-const int MAX_LIGHTS = 64;
+const int MAX_LIGHTS = 16;
 
 uniform vec3 light_positions[MAX_LIGHTS];
 uniform int light_count;
 
 uniform vec3 light_color;
+uniform vec3 light_normal;
 uniform float light_intensity;
 uniform float ambient_strength;
 uniform float ambient_scale;
@@ -72,17 +73,9 @@ uniform float shininess;
 uniform bool use_texture;
 uniform sampler2D diffuse_texture;
 
-uniform sampler2D shadow_maps[4];
-uniform mat4 light_view_projections[4];
-
-// GLSL 330 제약에 맞춰 sampler 배열을 상수 인덱스로 읽는다.
-float read_shadow_depth(int i, vec2 uv)
-{
-    if (i == 0) return texture(shadow_maps[0], uv).r;
-    if (i == 1) return texture(shadow_maps[1], uv).r;
-    if (i == 2) return texture(shadow_maps[2], uv).r;
-    return texture(shadow_maps[3], uv).r;
-}
+// 한 텍스처 안에서 i번째 광원의 깊이 층을 선택한다.
+uniform sampler2DArray shadow_map;
+uniform mat4 light_view_projections[MAX_LIGHTS];
 
 float shadow_visibility(int i, vec3 N)
 {
@@ -111,9 +104,9 @@ float shadow_visibility(int i, vec3 N)
         0.00003
     );
 
-    // 네 깊이 맵의 해상도는 모두 같다.
+    // textureSize의 z는 층 개수이며, xy가 깊이 맵 해상도다.
     vec2 texel_size = (
-        1.0 / vec2(textureSize(shadow_maps[0], 0))
+        1.0 / vec2(textureSize(shadow_map, 0).xy)
     );
 
     float visibility = 0.0;
@@ -125,9 +118,9 @@ float shadow_visibility(int i, vec3 N)
         {
             vec2 offset = vec2(x, y) * texel_size;
 
-            float sample_depth = read_shadow_depth(
-                i, p.xy + offset
-            );
+            float sample_depth = texture(
+                shadow_map, vec3(p.xy + offset, float(i))
+            ).r;
 
             visibility += (
                 p.z - bias <= sample_depth
@@ -195,7 +188,7 @@ void main() {
         base_color *= pow(texture_srgb, vec3(2.2));
     }
 
-        vec3 direct_lighting = vec3(0.0);
+    vec3 direct_lighting = vec3(0.0);
 
     // 광원 개수가 늘어나도 전체 광원 세기는 유지한다.
     float sample_intensity = (
@@ -209,8 +202,10 @@ void main() {
         vec3 L = light_vector / distance_to_light;
 
         float NdotL = max(dot(N, L), 0.0);
+        // 평평한 발광판의 뒤쪽으로는 빛을 보내지 않는다.
+        float emitter_cosine = max(dot(light_normal, -L), 0.0);
 
-        if (NdotL <= 0.0)
+        if (NdotL <= 0.0 || emitter_cosine <= 0.0)
             continue;
 
         float attenuation = (
@@ -218,7 +213,7 @@ void main() {
         );
 
         vec3 incoming_light = (
-            light_color * sample_intensity * attenuation
+            light_color * sample_intensity * attenuation * emitter_cosine
         );
 
         float visibility = shadow_visibility(i, N);

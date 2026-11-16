@@ -1,113 +1,140 @@
 import pyglet
 
+from ctypes import byref
 from pyglet.gl import *
+from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.image.buffer import Framebuffer, Renderbuffer
 
 
-class SrgbTarget:
-    def __init__(self):
-        # 첫 begin() 호출 또는 창 크기 변경을 감지하기 위한 값.
-        self.size = (0, 0)
+POST_VERTEX = """
+#version 330 core
+in vec2 POSITION;
+out vec2 uv;
 
-        # FBO와 실제 저장소는 첫 begin()에서 생성한다.
+void main()
+{
+    uv = POSITION * 0.5 + 0.5;
+    gl_Position = vec4(POSITION, 0.0, 1.0);
+}
+"""
+
+POST_FRAGMENT = """
+#version 330 core
+in vec2 uv;
+out vec4 final_color;
+
+uniform sampler2D hdr_color;
+uniform float exposure;
+
+vec3 linear_to_srgb(vec3 color)
+{
+    return mix(
+        1.055 * pow(color, vec3(1.0 / 2.4)) - 0.055,
+        12.92 * color,
+        lessThanEqual(color, vec3(0.0031308))
+    );
+}
+
+void main()
+{
+    vec3 hdr = max(texture(hdr_color, uv).rgb, vec3(0.0));
+
+    // Reinhard 톤매핑: 1보다 큰 밝기도 차이를 유지하며 0~1로 압축한다.
+    vec3 exposed = hdr * exposure;
+    vec3 mapped = exposed / (vec3(1.0) + exposed);
+
+    // 화면에 내보낼 때 한 번만 sRGB로 변환한다.
+    final_color = vec4(linear_to_srgb(mapped), 1.0);
+}
+"""
+
+
+class HdrTarget:
+    def __init__(self, exposure=1.6):
+        self.exposure = exposure
+        self.size = (0, 0)
         self.fbo = None
 
-    def begin(self, window):
-        # 창의 논리 크기 대신 실제 framebuffer 픽셀 크기를 사용한다.
-        # 고해상도 디스플레이에서는 두 크기가 다를 수 있다.
-        w, h = window.get_framebuffer_size()
+        self.program = ShaderProgram(
+            Shader(POST_VERTEX, "vertex"),
+            Shader(POST_FRAGMENT, "fragment"),
+        )
 
-        # GPU 저장소의 크기가 0이 되지 않도록 한다.
+        # 화면 전체를 덮는 삼각형. 카메라 행렬의 영향을 받지 않는다.
+        self.quad = self.program.vertex_list(
+            3, GL_TRIANGLES,
+            POSITION=("f", (-1.0, -1.0, 3.0, -1.0, -1.0, 3.0)),
+        )
+
+    def begin(self, window):
+        w, h = window.get_framebuffer_size()
         w, h = max(1, w), max(1, h)
 
-        # 첫 프레임 또는 창 크기가 바뀐 경우에만 다시 만든다.
         if self.size != (w, h):
             if self.fbo is not None:
-                # 이전 크기의 GPU 저장소를 먼저 해제한다.
                 self.fbo.delete()
                 self.color.delete()
                 self.depth.delete()
 
-            # 최종 색을 저장할 텍스처.
-            # RGB는 sRGB 형식의 각 8비트, alpha는 8비트다.
-            #
-            # blank_data=False이므로 초기 픽셀값은 채우지 않는다.
-            # main의 window.clear()가 매 프레임 초기화한다.
+            # 16비트 부동소수점으로 1보다 큰 조명값도 보존한다.
+            # 불투명 물체와 투명 물체 모두 이 선형 RGB 저장소에 그린다.
             self.color = pyglet.image.Texture.create(
                 w, h,
-                internalformat=GL_SRGB8_ALPHA8,
+                internalformat=GL_RGBA16F,
                 min_filter=GL_NEAREST,
                 mag_filter=GL_NEAREST,
                 blank_data=False,
             )
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
-            # 가까운 표면을 판별하기 위한 24비트 깊이 저장소.
-            # 셰이더에서 읽을 필요가 없으므로 Renderbuffer를 사용한다.
-            self.depth = Renderbuffer(
-                w, h, GL_DEPTH_COMPONENT24
-            )
-
-            # FBO는 색과 깊이 저장소를 연결하는 '묶음'이다.
-            # 실제 픽셀 데이터는 위의 color와 depth에 저장된다.
+            self.depth = Renderbuffer(w, h, GL_DEPTH_COMPONENT24)
             self.fbo = Framebuffer()
-
-            # 기본 색 attachment인 COLOR_ATTACHMENT0에 연결한다.
             self.fbo.attach_texture(self.color)
-
             self.fbo.attach_renderbuffer(
-                self.depth,
-                attachment=GL_DEPTH_ATTACHMENT,
+                self.depth, attachment=GL_DEPTH_ATTACHMENT
             )
-
-            # 완전성 검사는 현재 연결된 FBO를 대상으로 한다.
             self.fbo.bind()
 
             if not self.fbo.is_complete:
                 raise RuntimeError(self.fbo.get_status())
 
             self.size = (w, h)
+            glBindTexture(GL_TEXTURE_2D, 0)
 
-        # 이후 draw 호출의 목적지를 이 FBO로 지정한다.
-        # 따라서 main에서 호출하는 window.clear()도 여기를 지운다.
         self.fbo.bind()
-
-        # 그릴 픽셀 영역을 저장소 크기에 맞춘다.
         glViewport(0, 0, w, h)
 
-        # 셰이더는 조명을 계산한 선형 RGB를 출력한다.
-        #
-        # GPU는:
-        # 1. 기존 sRGB 색을 선형 값으로 읽고
-        # 2. 선형 공간에서 alpha blending을 수행한 뒤
-        # 3. 결과를 다시 sRGB 형식으로 저장한다.
-        #
-        # alpha에는 감마 변환을 적용하지 않는다.
-        glEnable(GL_FRAMEBUFFER_SRGB)
+        # 색이 이미 선형 float이므로 sRGB 변환 없이 저장·합성한다.
+        glDisable(GL_FRAMEBUFFER_SRGB)
 
     def present(self):
         w, h = self.size
-
-        # 색은 이미 sRGB로 저장되어 있다.
-        # 창으로 복사하면서 추가 변환하지 않도록 끈다.
+        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+        glViewport(0, 0, w, h)
         glDisable(GL_FRAMEBUFFER_SRGB)
 
-        # 읽을 곳: 계산용 FBO
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, self.fbo.id)
+        depth_enabled = bool(glIsEnabled(GL_DEPTH_TEST))
+        blend_enabled = bool(glIsEnabled(GL_BLEND))
+        depth_write = GLboolean()
+        glGetBooleanv(GL_DEPTH_WRITEMASK, byref(depth_write))
 
-        # 쓸 곳: 실제 창의 기본 framebuffer
-        # OpenGL에서 framebuffer 0은 기본 framebuffer를 의미한다.
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0)
+        glDisable(GL_DEPTH_TEST)
+        glDepthMask(GL_FALSE)
+        glDisable(GL_BLEND)
 
-        # 계산용 화면의 색을 창 전체에 복사한다.
-        # 앞 사각형은 원본 영역, 뒤 사각형은 목적지 영역이다.
-        # 깊이는 복사하지 않고 색만 복사한다.
-        glBlitFramebuffer(
-            0, 0, w, h,
-            0, 0, w, h,
-            GL_COLOR_BUFFER_BIT,
-            GL_NEAREST,
-        )
+        try:
+            glActiveTexture(GL_TEXTURE0)
+            glBindTexture(GL_TEXTURE_2D, self.color.id)
 
-        # 읽기와 쓰기 대상을 모두 창으로 돌린다.
-        # 이후 HUD가 계산용 화면이 아닌 실제 창에 그려진다.
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            self.program.use()
+            self.program["hdr_color"] = 0
+            self.program["exposure"] = self.exposure
+            self.quad.draw(GL_TRIANGLES)
+        finally:
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glDepthMask(depth_write.value)
+            if depth_enabled:
+                glEnable(GL_DEPTH_TEST)
+            if blend_enabled:
+                glEnable(GL_BLEND)

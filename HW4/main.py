@@ -6,7 +6,8 @@ from pie_box import create_pie_faces
 from camera import TrackballCamera
 from shader import create_program
 from ground import create_ground
-from linear_target import SrgbTarget
+from linear_target import HdrTarget
+from ceiling_light import CeilingLight
 from transparency import TransparentRenderer
 from shadow_map import AreaShadowMaps
 from HUD import HUD
@@ -14,6 +15,7 @@ from pathlib import Path
 from io import StringIO
 from copy import copy
 import re
+import random
 
 # 왼쪽 아래를 (0, 0, 0)으로 놓았을 때 Cornell box의 정 중앙의 좌표가 (1.45, 1.5, -1.5) 
 center = Vec3(1.45, 1.50, -1.50)
@@ -40,7 +42,7 @@ def on_resize(width, height):
 
 @window.event
 def on_draw():
-    # 1차: 광원 시점에서 깊이 저장
+    # 광원과 물체가 고정되어 있으면 첫 프레임의 깊이 맵을 재사용한다.
     shadow.render()
 
     # 2차: 카메라 시점에서 색과 투명도 계산
@@ -66,6 +68,7 @@ def on_draw():
     shadow.bind_to(program)
 
     batch.draw()
+    ceiling_light.draw()
     transparency.draw(window.view)
     
     render_target.present()
@@ -129,32 +132,36 @@ obj_text = re.sub(r"(?m)^g(\s+)", r"o\1", obj_text) # pyglet이 무시하는 Ble
 scene = pyglet.model.load(str(obj_path), file=StringIO(obj_text))
 
 program = create_program()
-render_target = SrgbTarget()
+render_target = HdrTarget(exposure=2.4)
 transparency = TransparentRenderer(program)
 
 vertex_lists = []
 
-MAX_LIGHTS = 64
-GRID_SIZE = 2
+MAX_LIGHTS = 16
+GRID_SIZE = 4
 
-if not 1 <= GRID_SIZE <= 8:
-    raise ValueError("GRID_SIZE는 1부터 8까지 사용할 수 있습니다.")
+if not 1 <= GRID_SIZE <= 4:
+    raise ValueError("GRID_SIZE는 1부터 4까지 사용할 수 있습니다.")
 
-light_center = Vec3(1.35, 2.95, -1.38)
+# 실제 천장 구멍의 중앙. 모든 샘플이 발광판 범위 안에 놓인다.
+light_center = Vec3(1.45, 2.98, -1.50)
 
 light_width = 0.60
 light_depth = 0.60
 
 light_positions = []
+light_rng = random.Random(2026)
 
 for i in range(GRID_SIZE):
     for j in range(GRID_SIZE):
+        # 각 칸 안에서 위치를 분산해 규칙적인 그림자 띠를 줄인다.
+        # 고정 seed를 사용하므로 매 프레임 흔들리지 않는다.
         x = light_center.x + (
-            (i + 0.5) / GRID_SIZE - 0.5
+            (i + light_rng.random()) / GRID_SIZE - 0.5
         ) * light_width
 
         z = light_center.z + (
-            (j + 0.5) / GRID_SIZE - 0.5
+            (j + light_rng.random()) / GRID_SIZE - 0.5
         ) * light_depth
 
         light_positions.append(
@@ -172,9 +179,20 @@ program["light_positions"] = padded_positions
 program["light_count"] = light_count
 
 # 사진의 차가운 바닥 조명에 맞춘 선형 RGB 상대 세기.
-program["light_color"] = (0.75, 0.85, 1.15)
-program["light_intensity"] = 22.0
+light_color = (0.75, 0.85, 1.15)
+program["light_color"] = light_color
+program["light_normal"] = (0.0, -1.0, 0.0)
+program["light_intensity"] = 38.0
 program["ambient_strength"] = 0.38
+
+# 천장 구멍보다 아주 조금 위에 두어 주변 면과의 깊이 충돌을 피한다.
+ceiling_light = CeilingLight(
+    center=Vec3(light_center.x, 3.002, light_center.z),
+    width=light_width,
+    depth=light_depth,
+    color=light_color,
+    brightness=40.0,
+)
 
 for node in scene.nodes:
 
@@ -226,9 +244,6 @@ for node in scene.nodes:
                 if attribute.name == "NORMAL"	
             )
 
-            if material.diffuse[3] >= 1.0:
-                shadow.add_mesh(positions) 
-
             vertex_count = len(positions) // 3
 
             if mesh.name == "Pie_Cube":
@@ -240,9 +255,13 @@ for node in scene.nodes:
                         normals,
                         material,
                         pie_textures,
+                        shadow=shadow,
                     )
                 )
                 continue
+
+            if material.diffuse[3] >= 1.0:
+                shadow.add_mesh(positions)
 
             material.diffuse_texture = None
             texcoords = [0.0, 0.0] * vertex_count
