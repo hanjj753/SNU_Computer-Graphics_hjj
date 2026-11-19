@@ -1,0 +1,18 @@
+{
+  "columns": [
+    "GRYFFINDOR",
+    "SLYTHERIN",
+    "RAVENCLAW",
+    "HUFFLEPUFF"
+  ],
+  "size": [
+    2048,
+    2048
+  ],
+  "font": "Harry P",
+  "tracking_em": 0.14,
+  "source": "https://www.dafont.com/harry_p.font",
+  "style": "Regular",
+  "rotation_degrees": 90,
+  "layout": "Whole words rotated 90 degrees clockwise, read from top to bottom"
+}

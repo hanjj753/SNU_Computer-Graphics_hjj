@@ -1,0 +1,8 @@
+name: snu_graphics_hjj_hw4
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - pyglet==2.1.16

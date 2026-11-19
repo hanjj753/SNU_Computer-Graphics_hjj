@@ -1,0 +1,19 @@
+{
+  "python": "3.12.14",
+  "pyglet": "2.1.16",
+  "renderer": "NVIDIA GeForce RTX 4060/PCIe/SSE2",
+  "gl_version": "(4, 6)",
+  "mean_frame_ms_20_cached_frames": 19.24,
+  "point_light_samples": 16,
+  "opaque_shadow_layers": 16,
+  "opaque_shadow_resolution": 2048,
+  "transmission_shadow_resolution": 512,
+  "bounce_patches": 96,
+  "water_triangles": 1536,
+  "box_triangles": 12288,
+  "minimum_corner_displacement": 0.00878453437283803,
+  "valid_water_shadow_pixels_layer0": 220,
+  "median_water_shadow_thickness": 0.35157811641693115,
+  "transparent_shadow_changed_pixels": 3374,
+  "gl_error": 0
+}

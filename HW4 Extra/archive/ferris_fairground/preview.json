@@ -1,0 +1,44 @@
+{
+  "scene": "NIGHT ORBIT",
+  "palette": "AURORA",
+  "simulation_time": 6.0,
+  "size": [
+    1280,
+    900
+  ],
+  "visible_rim_bulbs": 80,
+  "gondolas": 8,
+  "actual_point_lights": 74,
+  "glass_panes": 38,
+  "fairground_props": true,
+  "area_light_shadow_samples": 4,
+  "shadow_map_size": 1024,
+  "instances": 835,
+  "triangles": 144816,
+  "camera_eye": [
+    0.7338875659394806,
+    2.4491254941131126,
+    6.96439641637002
+  ],
+  "camera_target": [
+    0,
+    1.6,
+    -0.35
+  ],
+  "effects": {
+    "lights": true,
+    "fairground": true,
+    "bloom": true,
+    "reflections": true,
+    "shadows": true,
+    "glass": true,
+    "bump": true
+  },
+  "exposure": 1.18,
+  "cpu_submission_ms": 14.849519997369498,
+  "opengl": {
+    "renderer": "NVIDIA GeForce RTX 4060/PCIe/SSE2",
+    "version": "4.6.0 NVIDIA 591.44"
+  },
+  "gl_error": 0
+}

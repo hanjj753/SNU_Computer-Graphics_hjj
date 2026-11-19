@@ -1,0 +1,66 @@
+{
+  "gryffindor": {
+    "file": "gryffindor_crest.png",
+    "size": [
+      809,
+      987
+    ],
+    "uv_bounds": [
+      0.0012360939431396785,
+      0.0,
+      1.0,
+      0.9989868287740629
+    ],
+    "alpha_cutoff": 0.5,
+    "source_page": "https://www.pngaaa.com/detail/2317673",
+    "source_image": "https://image.pngaaa.com/673/2317673.png"
+  },
+  "slytherin": {
+    "file": "slytherin_crest.png",
+    "size": [
+      696,
+      812
+    ],
+    "uv_bounds": [
+      0.021551724137931036,
+      0.0024630541871921183,
+      0.9985632183908046,
+      0.9815270935960592
+    ],
+    "alpha_cutoff": 0.5,
+    "source_page": "https://www.pngaaa.com/detail/99898",
+    "source_image": "https://image.pngaaa.com/898/99898.png"
+  },
+  "ravenclaw": {
+    "file": "ravenclaw_crest.png",
+    "size": [
+      634,
+      782
+    ],
+    "uv_bounds": [
+      0.0031545741324921135,
+      0.0038363171355498722,
+      0.998422712933754,
+      0.9961636828644501
+    ],
+    "alpha_cutoff": 0.5,
+    "source_page": "https://www.pngaaa.com/detail/3441416",
+    "source_image": "https://image.pngaaa.com/416/3441416.png"
+  },
+  "hufflepuff": {
+    "file": "hufflepuff_crest.png",
+    "size": [
+      666,
+      816
+    ],
+    "uv_bounds": [
+      0.013513513513513514,
+      0.0012254901960784314,
+      0.9984984984984985,
+      0.9987745098039216
+    ],
+    "alpha_cutoff": 0.5,
+    "source_page": "https://www.pngaaa.com/detail/4381685",
+    "source_image": "https://image.pngaaa.com/685/4381685.png"
+  }
+}

@@ -12,6 +12,7 @@ HELP_TEXT = """[조작 안내]
 왼쪽 드래그: 회전
 Shift + 왼쪽 드래그: 화면 이동
 Ctrl + 왼쪽 드래그: 확대/축소
+M: PVC·상자 반사 켜기/끄기
 R: 카메라 초기화
 Q: 종료"""
 
@@ -34,6 +35,10 @@ class HUD:
         )
 
         self.resize(window.width, window.height)
+        self.set_reflection_state(True)
+
+    def set_reflection_state(self, enabled):
+        self.help_label.text=HELP_TEXT+("\n평면 반사: 켜짐" if enabled else "\n평면 반사: 꺼짐")
 
     def resize(self, width, height):
         self.help_label.x = width - 12

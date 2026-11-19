@@ -1,15 +1,21 @@
 import pyglet
 from pyglet.math import Vec3, Vec4
 from pyglet.gl import *
-from materials import apply_material_preset, PhongMaterialGroup
+from materials import apply_material_preset, PhongMaterialGroup, attach_reflections
 from pie_box import create_pie_faces
 from camera import TrackballCamera
 from shader import create_program
 from ground import create_ground
 from linear_target import HdrTarget
 from ceiling_light import CeilingLight
+from ceiling_bounce import CeilingBounce
 from transparency import TransparentRenderer
+from water_surface import build_water_volume
+from water_optics import WaterRenderer
 from shadow_map import AreaShadowMaps
+from transmission_shadow import WaterTransmissionShadow, CupTransmissionShadow
+from cup_geometry import build_cup_mesh
+from planar_reflection import PlanarReflections
 from HUD import HUD
 from pathlib import Path
 from io import StringIO
@@ -44,15 +50,8 @@ def on_resize(width, height):
 def on_draw():
     # 광원과 물체가 고정되어 있으면 첫 프레임의 깊이 맵을 재사용한다.
     shadow.render()
-
-    # 2차: 카메라 시점에서 색과 투명도 계산
-    # begin()이 shadow map용 viewport도 창 크기로 되돌린다.
-    render_target.begin(window)
-
-    glDepthMask(GL_TRUE)
-    glEnable(GL_DEPTH_TEST)
-    glDisable(GL_BLEND)
-    window.clear()
+    water_shadow.render()
+    cup_shadow.render()
 
     camera.apply(window)
 
@@ -66,13 +65,47 @@ def on_draw():
     )
 
     shadow.bind_to(program)
+    water_shadow.bind_to(program)
+    cup_shadow.bind_to(program)
+    ceiling_bounce.bind_depth(program)
+    shadow.bind_to(water.program)
 
-    batch.draw()
-    ceiling_light.draw()
-    transparency.draw(window.view)
+    # 주변 반사는 물 중앙에서 본 환경맵을 재사용한다. 장면이 고정이면 최초 한 번.
+    # 광원의 직접 정반사는 물 셰이더가 shadow map과 함께 별도 계산한다.
+    pvc_reflections.suspended=True
+    try:
+        water.capture_environment(window, program, batch.draw)
+    finally:
+        pvc_reflections.suspended=False
+    # PVC의 주변 물체 반사: 대칭 카메라로 다시 래스터화한 영상을 사용한다.
+    # 직접 광원의 하이라이트는 이미 계산하므로 발광판은 이 영상에서 제외한다.
+    pvc_reflections.capture(window,program,batch.draw,lambda view:transparency.draw(view))
+
+    # 카메라 시점의 선형 HDR 장면을 그린다.
+    render_target.begin(window)
+    glDepthMask(GL_TRUE)
+    glEnable(GL_DEPTH_TEST)
+    glDisable(GL_BLEND)
+    window.clear()
+    draw_opaque_scene()
+
+    if water.vertices is not None:
+        water.prepare_depth(window, render_target)
+        # 뒤쪽 컵 → 배경 저장 → 물 → 앞쪽 컵 순서로 합성한다.
+        transparency.draw(window.view, phase=-1, water_depth=water.front_depth, viewport_size=water.size, render_target=render_target)
+        water.capture_scene(render_target)
+        water.draw(window)
+        transparency.draw(window.view, phase=1, water_depth=water.front_depth, viewport_size=water.size, render_target=render_target)
+    else:
+        transparency.draw(window.view,render_target=render_target)
     
     render_target.present()
     hud.draw()
+
+
+def draw_opaque_scene():
+    batch.draw()
+    ceiling_light.draw()
 		
 @window.event
 def on_mouse_release( x, y, button, mods ):
@@ -114,6 +147,10 @@ def on_key_press(key, modifiers):
     if key == pyglet.window.key.R:
         camera.reset()
 
+    elif key == pyglet.window.key.M:
+        pvc_reflections.enabled=not pvc_reflections.enabled
+        hud.set_reflection_state(pvc_reflections.enabled)
+
     elif key == pyglet.window.key.Q:
         pyglet.app.exit()	
 
@@ -132,8 +169,12 @@ obj_text = re.sub(r"(?m)^g(\s+)", r"o\1", obj_text) # pyglet이 무시하는 Ble
 scene = pyglet.model.load(str(obj_path), file=StringIO(obj_text))
 
 program = create_program()
+program["reflection_clip_plane"]=(0,0,0,1)
+pvc_reflections = PlanarReflections()
+attach_reflections(program,pvc_reflections)
 render_target = HdrTarget(exposure=2.4)
 transparency = TransparentRenderer(program)
+water = WaterRenderer()
 
 vertex_lists = []
 
@@ -178,12 +219,17 @@ padded_positions = light_positions + [
 program["light_positions"] = padded_positions
 program["light_count"] = light_count
 
-# 사진의 차가운 바닥 조명에 맞춘 선형 RGB 상대 세기.
+# 실제 광원은 S24의 흰 화면이다. 화면 설정과 촬영 WB를 분리 측정하지 않았으므로
+# 이 값은 해당 사진의 바닥 조명에 맞춘 선형 RGB 상대값이다.
 light_color = (0.75, 0.85, 1.15)
 program["light_color"] = light_color
 program["light_normal"] = (0.0, -1.0, 0.0)
-program["light_intensity"] = 38.0
+light_intensity = 38.0
+program["light_intensity"] = light_intensity
 program["ambient_strength"] = 0.38
+for name in ("light_positions", "light_count", "light_color", "light_normal", "light_intensity"):
+    water.program[name] = program[name]
+ceiling_bounce = CeilingBounce(light_positions, light_color, light_intensity)
 
 # 천장 구멍보다 아주 조금 위에 두어 주변 면과의 깊이 충돌을 피한다.
 ceiling_light = CeilingLight(
@@ -198,11 +244,12 @@ for node in scene.nodes:
 
     FACE_FILES = {
         "front": "chocopie_front.jpg",
-        "back": "chocopie_back.png",
-        "right": "chocopie_bottom.png",
-        "left": "chocopie_top.png",
-        "top": "chocopie_right.png",
-        "bottom": "chocopie_left.jpg",
+        # 앞면의 흰 글자·빨간 인쇄색에 맞춘 sRGB 사본. 원본 사진은 보존한다.
+        "back": "color_matched/chocopie_back.png",
+        "right": "color_matched/chocopie_bottom.png",
+        "left": "color_matched/chocopie_top.png",
+        "top": "color_matched/chocopie_right.png",
+        "bottom": "color_matched/chocopie_left.png",
     }
 
     pie_textures = {}
@@ -246,6 +293,14 @@ for node in scene.nodes:
 
             vertex_count = len(positions) // 3
 
+            if material.name == "Cup":
+                # 같은 치수의 몸체에 얇은 평평한 입구 띠를 연결한다.
+                cup_mesh = build_cup_mesh(positions)
+                water.set_cup(cup_mesh)
+                positions, normals = cup_mesh.positions, cup_mesh.normals
+                material.rim_base_y = cup_mesh.rim_base_y
+                vertex_count = len(positions)//3
+
             if mesh.name == "Pie_Cube":
                 vertex_lists.extend(
                     create_pie_faces(
@@ -256,9 +311,30 @@ for node in scene.nodes:
                         material,
                         pie_textures,
                         shadow=shadow,
+                        reflections=pvc_reflections,
+                        bounce=ceiling_bounce,
                     )
                 )
                 continue
+
+            if material.name == "Water":
+                # 굴절 경로의 두께가 필요하므로 수면에 옆면과 바닥을 연결한다.
+                # 여러 겹을 alpha 합성하는 대신 가장 가까운 경계에서 한 번 계산한다.
+                water.set_mesh(*build_water_volume(positions,cup_mesh))
+                continue
+
+            if material.name in ("wall_red", "wall_green"):
+                inward = Vec3(1, 0, 0) if material.name == "wall_red" else Vec3(-1, 0, 0)
+                ceiling_bounce.add_wall(positions, normals, material, inward)
+
+            if mesh.name.startswith("Floor"):
+                ceiling_bounce.add_room_surface(positions,normals,material,Vec3(0,1,0))
+            elif mesh.name.startswith("Back_Wall"):
+                ceiling_bounce.add_room_surface(positions,normals,material,Vec3(0,0,1))
+            elif mesh.name.startswith("Ceiling"):
+                ceiling_bounce.add_room_surface(positions,normals,material,Vec3(0,-1,0))
+            elif material.name=="torus_mint":
+                ceiling_bounce.add_occluder(positions)
 
             if material.diffuse[3] >= 1.0:
                 shadow.add_mesh(positions)
@@ -289,6 +365,10 @@ for node in scene.nodes:
             vertex_lists.append(vertex_list)
 
 ground = create_ground(program, batch)
+transparency.optics.set_cup(cup_mesh,water.top)
+ceiling_bounce.bind_to(program)
+water_shadow = WaterTransmissionShadow(shadow, water, light_positions)
+cup_shadow = CupTransmissionShadow(shadow, cup_mesh, light_positions, water_level=water.top)
 camera.resize(window, width, height)
 
 pyglet.app.run()

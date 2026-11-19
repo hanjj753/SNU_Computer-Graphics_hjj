@@ -1,0 +1,18 @@
+{
+  "columns": [
+    "GRYFFINDOR",
+    "SLYTHERIN",
+    "RAVENCLAW",
+    "HUFFLEPUFF"
+  ],
+  "size": [
+    2048,
+    2048
+  ],
+  "font": "Cinzel Decorative",
+  "tracking_em": 0.14,
+  "source": "https://github.com/google/fonts/tree/main/ofl/cinzeldecorative",
+  "style": "Bold",
+  "rotation_degrees": 90,
+  "layout": "Whole words rotated 90 degrees clockwise, read from top to bottom"
+}

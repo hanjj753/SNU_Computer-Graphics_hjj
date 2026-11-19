@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "scene": "THE GREAT HALL",
+  "revision": "Cinzel Decorative Bold selected as the default banner font",
+  "gpu": "NVIDIA GeForce RTX 4060/PCIe/SSE2",
+  "resolution": [
+    1280,
+    900
+  ],
+  "base": "preview.png",
+  "checks": {
+    "preview": {
+      "gl_error": 0,
+      "size": [
+        1280,
+        900
+      ],
+      "font": "Cinzel Decorative Bold",
+      "letter_spacing_em": 0.14,
+      "lettering_top_height": 1.85,
+      "lettering_center_height": 1.26
+    },
+    "captures/books_wall_angle": {
+      "gl_error": 0,
+      "size": [
+        1280,
+        900
+      ],
+      "font": "Cinzel Decorative Bold",
+      "letter_spacing_em": 0.14,
+      "lettering_top_height": 1.85,
+      "lettering_center_height": 1.26
+    }
+  },
+  "cpu_geometry_containment_animation_and_toggle_checks": "passed",
+  "floating_books": 6,
+  "banner_count": 4,
+  "banner_height": 2.45,
+  "font": "Cinzel Decorative Bold",
+  "lettering_layout": "Whole words rotated 90 degrees clockwise, read from top to bottom",
+  "vertical_house_names": [
+    {
+      "name": "GRYFFINDOR",
+      "atlas_column": 0,
+      "parallel_to_side_wall": true,
+      "whole_word_clockwise_rotation_degrees": 90
+    },
+    {
+      "name": "HUFFLEPUFF",
+      "atlas_column": 3,
+      "parallel_to_side_wall": true,
+      "whole_word_clockwise_rotation_degrees": 90
+    },
+    {
+      "name": "SLYTHERIN",
+      "atlas_column": 1,
+      "parallel_to_side_wall": true,
+      "whole_word_clockwise_rotation_degrees": 90
+    },
+    {
+      "name": "RAVENCLAW",
+      "atlas_column": 2,
+      "parallel_to_side_wall": true,
+      "whole_word_clockwise_rotation_degrees": 90
+    }
+  ],
+  "crest_design": "Animal, shield, helmet, mantling and ribbon; original RGBA PNGs, not checkerboard previews",
+  "crest_sources": {
+    "gryffindor": "https://www.pngaaa.com/detail/2317673",
+    "slytherin": "https://www.pngaaa.com/detail/99898",
+    "ravenclaw": "https://www.pngaaa.com/detail/3441416",
+    "hufflepuff": "https://www.pngaaa.com/detail/4381685"
+  },
+  "books_and_names_have_emission": false,
+  "point_light_count": 52,
+  "banner_bottom": 0.54,
+  "font_source": "https://github.com/google/fonts/tree/main/ofl/cinzeldecorative",
+  "lettering_center_height": 1.26,
+  "font_options": [
+    "Cinzel Decorative Bold",
+    "Harry P"
+  ],
+  "alternative_font_source": "https://www.dafont.com/harry_p.font",
+  "lettering_height": 1.18,
+  "lettering_top_height": 1.85,
+  "letter_spacing_em": 0.14,
+  "default_banner_font": "cinzel"
+}

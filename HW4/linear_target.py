@@ -4,6 +4,7 @@ from ctypes import byref
 from pyglet.gl import *
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.image.buffer import Framebuffer, Renderbuffer
+from bloom import Bloom
 
 
 POST_VERTEX = """
@@ -25,6 +26,10 @@ out vec4 final_color;
 
 uniform sampler2D hdr_color;
 uniform float exposure;
+uniform sampler2D bloom_color;
+uniform float bloom_strength;
+uniform vec2 inverse_size;
+uniform bool antialias_enabled;
 
 vec3 linear_to_srgb(vec3 color)
 {
@@ -35,16 +40,40 @@ vec3 linear_to_srgb(vec3 color)
     );
 }
 
-void main()
+vec3 display_sample(vec2 coordinate)
 {
-    vec3 hdr = max(texture(hdr_color, uv).rgb, vec3(0.0));
+    vec3 hdr = max(texture(hdr_color,coordinate).rgb
+                   +bloom_strength*texture(bloom_color,coordinate).rgb,vec3(0.0));
 
     // Reinhard 톤매핑: 1보다 큰 밝기도 차이를 유지하며 0~1로 압축한다.
     vec3 exposed = hdr * exposure;
     vec3 mapped = exposed / (vec3(1.0) + exposed);
 
     // 화면에 내보낼 때 한 번만 sRGB로 변환한다.
-    final_color = vec4(linear_to_srgb(mapped), 1.0);
+    return linear_to_srgb(mapped);
+}
+
+void main()
+{
+    vec3 center=display_sample(uv);
+    if (!antialias_enabled) { final_color=vec4(center,1.0); return; }
+    vec3 nw=display_sample(uv+inverse_size*vec2(-1,1));
+    vec3 ne=display_sample(uv+inverse_size*vec2(1,1));
+    vec3 sw=display_sample(uv+inverse_size*vec2(-1,-1));
+    vec3 se=display_sample(uv+inverse_size*vec2(1,-1));
+    vec3 luma=vec3(.299,.587,.114);
+    float cn=dot(center,luma),lnw=dot(nw,luma),lne=dot(ne,luma),lsw=dot(sw,luma),lse=dot(se,luma);
+    float low=min(cn,min(min(lnw,lne),min(lsw,lse)));
+    float high=max(cn,max(max(lnw,lne),max(lsw,lse)));
+    // 명암 차이가 작은 곳은 원래 색을 유지하고 윤곽에만 FXAA 방식 필터를 적용한다.
+    if (high-low<max(.025,high*.125)) { final_color=vec4(center,1.0);return; }
+    vec2 direction=vec2(-((lnw+lne)-(lsw+lse)),(lnw+lsw)-(lne+lse));
+    float reduction=max((lnw+lne+lsw+lse)*.03125,.0078125);
+    direction=clamp(direction/(min(abs(direction.x),abs(direction.y))+reduction),vec2(-6),vec2(6))*inverse_size;
+    vec3 a=.5*(display_sample(uv-direction/6.)+display_sample(uv+direction/6.));
+    vec3 b=.5*a+.25*(display_sample(uv-direction*.5)+display_sample(uv+direction*.5));
+    float lb=dot(b,luma);
+    final_color=vec4(lb<low || lb>high ? a:b,1.0);
 }
 """
 
@@ -54,6 +83,8 @@ class HdrTarget:
         self.exposure = exposure
         self.size = (0, 0)
         self.fbo = None
+        self.bloom = Bloom()
+        self.antialias_enabled = True
 
         self.program = ShaderProgram(
             Shader(POST_VERTEX, "vertex"),
@@ -81,8 +112,8 @@ class HdrTarget:
             self.color = pyglet.image.Texture.create(
                 w, h,
                 internalformat=GL_RGBA16F,
-                min_filter=GL_NEAREST,
-                mag_filter=GL_NEAREST,
+                min_filter=GL_LINEAR,
+                mag_filter=GL_LINEAR,
                 blank_data=False,
             )
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
@@ -110,8 +141,6 @@ class HdrTarget:
 
     def present(self):
         w, h = self.size
-        glBindFramebuffer(GL_FRAMEBUFFER, 0)
-        glViewport(0, 0, w, h)
         glDisable(GL_FRAMEBUFFER_SRGB)
 
         depth_enabled = bool(glIsEnabled(GL_DEPTH_TEST))
@@ -124,15 +153,27 @@ class HdrTarget:
         glDisable(GL_BLEND)
 
         try:
+            bloom_color = self.bloom.apply(self.color,self.size)
+            glBindFramebuffer(GL_FRAMEBUFFER, 0)
+            glViewport(0, 0, w, h)
+            glActiveTexture(GL_TEXTURE2)
+            glBindTexture(GL_TEXTURE_2D,bloom_color.id)
             glActiveTexture(GL_TEXTURE0)
             glBindTexture(GL_TEXTURE_2D, self.color.id)
 
             self.program.use()
             self.program["hdr_color"] = 0
             self.program["exposure"] = self.exposure
+            self.program["bloom_color"] = 2
+            self.program["bloom_strength"] = self.bloom.strength
+            self.program["inverse_size"] = (1.0/w,1.0/h)
+            self.program["antialias_enabled"] = self.antialias_enabled
             self.quad.draw(GL_TRIANGLES)
         finally:
             glBindTexture(GL_TEXTURE_2D, 0)
+            glActiveTexture(GL_TEXTURE2)
+            glBindTexture(GL_TEXTURE_2D,0)
+            glActiveTexture(GL_TEXTURE0)
             glDepthMask(depth_write.value)
             if depth_enabled:
                 glEnable(GL_DEPTH_TEST)
