@@ -13,8 +13,9 @@ PLANES = {
     "left": (Vec3(1,0,0),0.0),
     "right": (Vec3(-1,0,0),2.9),
 }
-REFLECTION_STRENGTH = {"ceiling":0.65,"left":0.14,"right":0.12}
-REFLECTION_ROUGHNESS = {"ceiling":0.50,"left":0.58,"right":0.58}
+# 천장의 비침은 줄이고, 벽의 반사 영상은 약하게 섞는다.
+REFLECTION_STRENGTH = {"ceiling":0.55,"left":0.14,"right":0.12}
+REFLECTION_ROUGHNESS = {"ceiling":0.60,"left":0.58,"right":0.58}
 
 
 def mirror_matrix(normal, distance):
