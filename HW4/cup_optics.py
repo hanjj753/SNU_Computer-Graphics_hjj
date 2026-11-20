@@ -108,8 +108,6 @@ vec4 cup_transmitted_color(vec3 N,vec3 V,vec3 surface_color,float opacity) {
 class CupOptics:
     def __init__(self, program):
         self.program=program
-        self.enabled=True
-        self.ready=False
         self.ior=1.49
         self.refraction_strength=1.1
         self.frost_radius=1.8
@@ -123,7 +121,6 @@ class CupOptics:
         self.slope=(rhi-rlo)/(hi-lo)
         self.base_thickness=mesh.base_thickness
         self.water_top=water_top
-        self.ready=True
 
     def _resize(self,size):
         if self.size==size:return
@@ -148,9 +145,9 @@ class CupOptics:
         if not self.fbo.is_complete:raise RuntimeError(self.fbo.get_status())
 
     def bind(self,render_target):
-        active=self.enabled and self.ready and render_target is not None
+        active=render_target is not None
         self.program['cup_optics_enabled']=active
-        if not active:return False
+        if not active:return
         self._resize(render_target.size)
         # 현재 그리고 있는 색 텍스처를 바로 읽으면 결과가 정의되지 않는다.
         # 물 뒤/앞의 컵을 그리기 직전에 각각 배경 색과 깊이를 별도로 복사한다.
@@ -173,7 +170,6 @@ class CupOptics:
         self.program['cup_refraction_strength']=self.refraction_strength
         self.program['cup_frost_radius']=self.frost_radius
         glActiveTexture(GL_TEXTURE0)
-        return True
 
     def unbind(self):
         self.program['cup_optics_enabled']=False

@@ -29,7 +29,7 @@ TOP_RIDGE_HEIGHT = 0.030
 
 
 def create_pie_faces(
-    program, batch, positions, normals, base_material, textures,
+    program, batch, positions, normals, textures,
     *, shadow=None, reflections=None, bounce=None,
 ):
     angle = math.radians(30.0)
@@ -84,16 +84,11 @@ def create_pie_faces(
         if shadow is not None:
             shadow.add_mesh(data["positions"])
 
-        material = SimpleMaterial(
-            name=f"Pie_{face}",
-            diffuse=tuple(base_material.diffuse),
-            specular=tuple(base_material.specular),
-            shininess=base_material.shininess,
-        )
-        # 광택은 공통값을 쓰고, 사진에서 어두운 측면의 간접광은 따로 보정한다.
+        material = SimpleMaterial(name=f"Pie_{face}")
+        # 각 면의 재질 계수와 포장 텍스처를 설정한다.
         apply_material_preset(material)
         if face=="front":material.planar_plane="box_front"
-        material.diffuse_texture = textures.get(face)
+        material.diffuse_texture = textures[face]
         if bounce is not None:
             # 화면·그림자·간접광의 가림에 동일한 곡면 메시를 사용한다.
             bounce.add_box_face(data,material,material.diffuse_texture)

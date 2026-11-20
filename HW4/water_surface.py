@@ -70,11 +70,10 @@ def build_water_surface(positions):
             add_triangle(inner[i], inner[j], outer[j])
             add_triangle(inner[i], outer[j], outer[i])
 
-    # 옆면·바닥을 중복해서 반투명 합성하지 않는, 수면만의 근사다.
     return surface_positions, surface_normals
 
 
-def build_water_volume(positions, cup_mesh=None):
+def build_water_volume(positions, cup_mesh):
     """굴절용으로 수면에 옆면·바닥을 연결한다. 앞/뒤 깊이로 두께를 구한다."""
     surface_positions, surface_normals = build_water_surface(positions)
     points = list(zip(positions[0::3], positions[1::3], positions[2::3]))
@@ -82,7 +81,7 @@ def build_water_volume(positions, cup_mesh=None):
     cz = (min(p[2] for p in points) + max(p[2] for p in points)) / 2
     raw_bottom = min(p[1] for p in points)
     # 물의 바닥이 플라스틱 바닥 안으로 들어가지 않도록 컵 안쪽 높이에 맞춘다.
-    bottom = max(raw_bottom,cup_mesh.inner_profile[0][0]+0.0001) if cup_mesh is not None else raw_bottom
+    bottom = max(raw_bottom,cup_mesh.inner_profile[0][0]+0.0001)
     top = max(surface_positions[1::3])
     lower_radius = max(
         math.hypot(x - cx, z - cz) for x, y, z in points

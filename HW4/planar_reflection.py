@@ -65,7 +65,6 @@ class PlanarReflections:
         self.capturing_plane=None
         self.matrices={}
         self.last_camera=None
-        self.capture_count=0
         self.strength=dict(REFLECTION_STRENGTH)
         self.roughness=dict(REFLECTION_ROUGHNESS)
         self.black=pyglet.image.Texture.create(1,1,internalformat=GL_RGBA16F,fmt=GL_RGBA)
@@ -88,7 +87,7 @@ class PlanarReflections:
         self.size=size
         self.dirty=True
 
-    def capture(self,window,program,draw_opaque,draw_transparent=None):
+    def capture(self,window,program,draw_opaque,draw_transparent):
         if not self.enabled:return
         self._resize(window)
         camera_key=(tuple(window.projection),tuple(window.view),self.size)
@@ -96,7 +95,6 @@ class PlanarReflections:
         projection,view=window.projection,window.view
         eye=(~view)@Vec4(0,0,0,1)
         old_camera=program["camera_position"]
-        old_bounce=program["bounce_strength"]
         old_clip=program["reflection_clip_plane"]
         old_capture=program["reflection_capture"]
         old_suspended=self.suspended
@@ -130,18 +128,16 @@ class PlanarReflections:
                 # 반사하는 판과 그 바깥쪽은 반사 영상에서 제외한다.
                 program["reflection_clip_plane"]=(*normal,distance-.001)
                 draw_opaque()
-                if draw_transparent is not None:draw_transparent(window.view)
+                draw_transparent(window.view)
                 glActiveTexture(GL_TEXTURE0)
                 glBindTexture(GL_TEXTURE_2D,target.texture.id)
                 glGenerateMipmap(GL_TEXTURE_2D)
                 glBindTexture(GL_TEXTURE_2D,0)
             self.last_camera=camera_key
             self.dirty=False
-            self.capture_count+=1
         finally:
             window.projection,window.view=projection,view
             program["camera_position"]=old_camera
-            program["bounce_strength"]=old_bounce
             program["reflection_clip_plane"]=old_clip
             program["reflection_capture"]=old_capture
             self.suspended=old_suspended

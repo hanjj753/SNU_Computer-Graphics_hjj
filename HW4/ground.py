@@ -13,12 +13,7 @@ def create_ground(program, batch):
          half_size, y, -half_size,
     ]
 
-    material = SimpleMaterial(
-        name="Ground",
-        diffuse=(0.12, 0.12, 0.12, 1.0),
-        specular=(0.0, 0.0, 0.0, 1.0),
-        shininess=16.0,
-    )
+    material = SimpleMaterial(name="Ground")
     # 색과 간접광 보정값은 materials.py에서 함께 관리한다.
     apply_material_preset(material)
     material.diffuse_texture = None

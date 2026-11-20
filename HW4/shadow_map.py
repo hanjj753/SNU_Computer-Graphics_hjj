@@ -109,15 +109,11 @@ class AreaShadowMaps:
                 POSITION=("f", positions),
             )
         )
-        self.invalidate()
-
-    def invalidate(self):
-        # 깊이 패스의 정점이나 광원 행렬을 바꾼 경우 호출한다.
         self.dirty = True
 
-    def render(self, force=False):
+    def render(self):
         # 카메라를 움직여도 광원 시점의 깊이 값은 변하지 않는다.
-        if not self.dirty and not force:
+        if not self.dirty:
             return
 
         viewport = (GLint * 4)()

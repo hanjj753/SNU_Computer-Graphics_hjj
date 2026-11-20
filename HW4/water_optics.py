@@ -22,10 +22,9 @@ ENVIRONMENT_SIZE = 256
 WATER_SHININESS = 128.0
 REFLECTION_LOD = 1.0
 # 넓게 퍼지는 접촉선 반사를 사진에 맞춘 시각적 보정값.
-# 50~120을 비교한 뒤, 가는 선의 형태를 유지하면서 반사가 확실한 값으로 선택했다.
+# 실제 접촉선의 복잡한 곡률을 단순화했으므로 세기는 사진에 맞춘 보정값이다.
 MENISCUS_SPECULAR_STRENGTH = 80.0
 MENISCUS_SHININESS = 8.0
-MENISCUS_REAR_STRENGTH = 1.0
 
 WATER_VERTEX = """
 #version 330 core
@@ -86,10 +85,8 @@ uniform vec3 light_normal;
 uniform float light_intensity;
 uniform float water_shininess;
 uniform float reflection_lod;
-uniform float direct_specular_strength;
 uniform float meniscus_specular_strength;
 uniform float meniscus_shininess;
-uniform float meniscus_rear_strength;
 // SHADOW_FUNCTIONS
 
 vec3 direct_reflection(vec3 N,vec3 V,float f0,float power) {
@@ -107,7 +104,7 @@ vec3 direct_reflection(vec3 N,vec3 V,float f0,float power) {
         result+=F*lobe*cosine*emitter*light_color*light_intensity
                 /float(max(light_count,1))/distance_squared*shadow_visibility(i,N);
     }
-    return direct_specular_strength*result;
+    return result;
 }
 
 vec3 view_position(vec2 uv, float depth) {
@@ -229,7 +226,7 @@ void main() {
         vec3 rear_normal=normalize(vec3(-radial_direction.x,1.25,-radial_direction.y));
         vec3 contact_normal=normalize(mix(rear_normal,front_normal,front));
         float air_f0 = pow((water_ior-1.0)/(water_ior+1.0),2.0);
-        color += contact*mix(meniscus_rear_strength,1.0,front)*meniscus_specular_strength
+        color += contact*meniscus_specular_strength
                * direct_reflection(contact_normal,V,air_f0,meniscus_shininess);
     }
     // 반사와 투과를 한 번에 계산한 색이며 추가 alpha 합성은 하지 않는다.
@@ -243,7 +240,6 @@ class WaterRenderer:
     def __init__(self):
         self.program = ShaderProgram(Shader(WATER_VERTEX, "vertex"), Shader(WATER_FRAGMENT, "fragment"))
         self.depth_program = ShaderProgram(Shader(DEPTH_VERTEX, "vertex"), Shader("#version 330 core\nvoid main() {}", "fragment"))
-        self.vertices = None
         self.size = (0, 0)
         self.environment_dirty = True
         self.ior = WATER_IOR
@@ -252,9 +248,7 @@ class WaterRenderer:
         self.cup_base_thickness = 0.0
         self.refraction_strength = REFRACTION_STRENGTH
         self.absorption = ABSORPTION
-        self.direct_specular_strength = 1.0
         self.meniscus_specular_strength = MENISCUS_SPECULAR_STRENGTH
-        self.meniscus_rear_strength = MENISCUS_REAR_STRENGTH
         self._create_environment()
 
     def set_cup(self, cup_mesh):
@@ -308,7 +302,7 @@ class WaterRenderer:
 
     def capture_environment(self, window, scene_program, draw_opaque):
         """고정 장면은 최초 한 번, 물 중앙에서 여섯 방향으로 래스터화한다."""
-        if self.vertices is None or not self.environment_dirty:
+        if not self.environment_dirty:
             return
         projection, view = window.projection, window.view
         camera_position = scene_program["camera_position"]
@@ -436,10 +430,8 @@ class WaterRenderer:
         self.program["camera_inside"] = inside
         self.program["water_shininess"] = WATER_SHININESS
         self.program["reflection_lod"] = REFLECTION_LOD
-        self.program["direct_specular_strength"] = self.direct_specular_strength
         self.program["meniscus_specular_strength"] = self.meniscus_specular_strength
         self.program["meniscus_shininess"] = MENISCUS_SHININESS
-        self.program["meniscus_rear_strength"] = self.meniscus_rear_strength
         textures = (("scene_color", self.scene_color.id), ("scene_depth", self.scene_depth.id),
                     ("water_front_depth", self.front_depth.id), ("water_back_depth", self.back_depth.id))
         for unit, (name, texture) in enumerate(textures, 2):

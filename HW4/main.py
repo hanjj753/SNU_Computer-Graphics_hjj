@@ -89,15 +89,12 @@ def on_draw():
     window.clear()
     draw_opaque_scene()
 
-    if water.vertices is not None:
-        water.prepare_depth(window, render_target)
-        # 뒤쪽 컵 → 배경 저장 → 물 → 앞쪽 컵 순서로 합성한다.
-        transparency.draw(window.view, phase=-1, water_depth=water.front_depth, viewport_size=water.size, render_target=render_target)
-        water.capture_scene(render_target)
-        water.draw(window)
-        transparency.draw(window.view, phase=1, water_depth=water.front_depth, viewport_size=water.size, render_target=render_target)
-    else:
-        transparency.draw(window.view,render_target=render_target)
+    water.prepare_depth(window, render_target)
+    # 뒤쪽 컵 → 배경 저장 → 물 → 앞쪽 컵 순서로 합성한다.
+    transparency.draw(window.view, phase=-1, water_depth=water.front_depth, viewport_size=water.size, render_target=render_target)
+    water.capture_scene(render_target)
+    water.draw(window)
+    transparency.draw(window.view, phase=1, water_depth=water.front_depth, viewport_size=water.size, render_target=render_target)
     
     render_target.present()
     hud.draw()
@@ -240,44 +237,39 @@ ceiling_light = CeilingLight(
     brightness=40.0,
 )
 
+FACE_FILES = {
+    "front": "chocopie_front.jpg",
+    # 앞면의 흰 글자·빨간 인쇄색에 맞춘 sRGB 사본. 원본 사진은 보존한다.
+    "back": "color_matched/chocopie_back.png",
+    "right": "color_matched/chocopie_bottom.png",
+    "left": "color_matched/chocopie_top.png",
+    "top": "color_matched/chocopie_right.png",
+    "bottom": "color_matched/chocopie_left.png",
+}
+
+pie_textures = {}
+
+for face, filename in FACE_FILES.items():
+    texture = pyglet.image.load(
+        str(base_dir / "textures" / filename)
+    ).get_texture()
+
+    glBindTexture(texture.target, texture.id)
+
+    glTexParameteri(
+        texture.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE
+    )
+    glTexParameteri(
+        texture.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE
+    )
+
+    pie_textures[face] = texture
+
 for node in scene.nodes:
-
-    FACE_FILES = {
-        "front": "chocopie_front.jpg",
-        # 앞면의 흰 글자·빨간 인쇄색에 맞춘 sRGB 사본. 원본 사진은 보존한다.
-        "back": "color_matched/chocopie_back.png",
-        "right": "color_matched/chocopie_bottom.png",
-        "left": "color_matched/chocopie_top.png",
-        "top": "color_matched/chocopie_right.png",
-        "bottom": "color_matched/chocopie_left.png",
-    }
-
-    pie_textures = {}
-
-    for face, filename in FACE_FILES.items():
-        if filename is None:
-            continue
-
-        texture = pyglet.image.load(
-            str(base_dir / "textures" / filename)
-        ).get_texture()
-
-        glBindTexture(texture.target, texture.id)
-
-        glTexParameteri(
-            texture.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE
-        )
-        glTexParameteri(
-            texture.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE
-        )
-
-        pie_textures[face] = texture
-
     for mesh in node.meshes:
         for primitive in mesh.primitives:
             # 흰색 재질을 공유하는 바닥과 천장의 설정을 독립적으로 유지한다.
             material = copy(primitive.material)
-            apply_material_preset(material, mesh.name)
 
             positions = next(
                 attribute.array
@@ -308,7 +300,6 @@ for node in scene.nodes:
                         batch,
                         positions,
                         normals,
-                        material,
                         pie_textures,
                         shadow=shadow,
                         reflections=pvc_reflections,
@@ -323,9 +314,11 @@ for node in scene.nodes:
                 water.set_mesh(*build_water_volume(positions,cup_mesh))
                 continue
 
+            apply_material_preset(material, mesh.name)
+
             if material.name in ("wall_red", "wall_green"):
                 inward = Vec3(1, 0, 0) if material.name == "wall_red" else Vec3(-1, 0, 0)
-                ceiling_bounce.add_wall(positions, normals, material, inward)
+                ceiling_bounce.add_room_surface(positions, normals, material, inward)
 
             if mesh.name.startswith("Floor"):
                 ceiling_bounce.add_room_surface(positions,normals,material,Vec3(0,1,0))

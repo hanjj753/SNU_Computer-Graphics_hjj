@@ -49,7 +49,6 @@ class Bloom:
         # 흰 화면 주위가 넓고 하얗게 뜨지 않도록 강한 빛에만 약한 번짐을 준다.
         self.threshold = 4.0
         self.strength = 0.01
-        self.radius = 1.0
         self.size = (0, 0)
         self.bright = ShaderProgram(Shader(VERTEX,"vertex"),Shader(BRIGHT,"fragment"))
         self.blur = ShaderProgram(Shader(VERTEX,"vertex"),Shader(BLUR,"fragment"))
@@ -89,7 +88,7 @@ class Bloom:
             for src,dst,direction in ((0,1,(1,0)),(1,0,(0,1))):
                 self.fbos[dst].bind()
                 glBindTexture(GL_TEXTURE_2D,self.textures[src].id)
-                self.blur["step_uv"] = tuple(self.radius*direction[i]/self.size[i] for i in range(2))
+                self.blur["step_uv"] = tuple(direction[i]/self.size[i] for i in range(2))
                 self.quads[self.blur].draw(GL_TRIANGLES)
         glBindTexture(GL_TEXTURE_2D,0)
         return self.textures[0]

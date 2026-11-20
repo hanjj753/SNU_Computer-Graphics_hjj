@@ -3,9 +3,6 @@ from cup_optics import CUP_OPTICS_SOURCE
 from hemicube import VISIBILITY_SOURCE
 from pyglet.graphics.shader import Shader, ShaderProgram
 
-# POSITION : 
-# COLOR_0 
-
 VERTEX_SOURCE = """
 #version 330 core
 
@@ -43,8 +40,6 @@ void main()
         * window.view
         * position_world
     );  
-    
-    vertex_color = COLOR_0;
 }
 """
 
@@ -74,7 +69,6 @@ uniform vec3 specular_color;
 uniform float shininess;
 uniform float contact_occlusion_height;
 uniform float surface_grain;
-uniform float indirect_diffuse_gain;
 uniform bool baked_ceiling_surface;
 uniform sampler2D ceiling_diffuse_map;
 uniform sampler2D ceiling_specular_map;
@@ -105,27 +99,22 @@ uniform vec3 bounce_specular_flux[MAX_BOUNCE_LIGHTS];
 uniform vec3 bounce_reflections[MAX_BOUNCE_LIGHTS];
 uniform vec3 bounce_normals[MAX_BOUNCE_LIGHTS];
 uniform vec2 bounce_parameters[MAX_BOUNCE_LIGHTS]; // x: power, y: area
-uniform float bounce_strength;
 
 // GI_VISIBILITY
 
 vec3 ceiling_indirect(vec3 N, vec3 V, vec3 base_color)
 {
-    if (!receive_ceiling_bounce || bounce_strength<=0.0) return vec3(0.0);
+    if (!receive_ceiling_bounce) return vec3(0.0);
     const float PI = 3.141592653589793;
     vec3 result = vec3(0.0);
     vec3 Ks = clamp(specular_color, vec3(0.0), vec3(1.0));
     vec3 Kd = clamp(base_color, vec3(0.0), vec3(1.0)) * (1.0-Ks);
     if(baked_ceiling_surface && N.y<-.9) {
         vec2 uv=vec2(world_position.x/2.9,-world_position.z/3.0);
-        vec4 diffuse=texture(ceiling_diffuse_map,uv);
-        // 기본 GI는 이미 실제 가림을 포함한다. 1보다 큰 사진 보정량만
-        // 상자 뒤에서도 똑같이 적용되지 않도록 바닥 가시율로 제한한다.
-        float gain=min(1.0,indirect_diffuse_gain)+max(0.0,indirect_diffuse_gain-1.0)*diffuse.a;
-        vec3 irradiance=gain*diffuse.rgb
+        vec3 irradiance=texture(ceiling_diffuse_map,uv).rgb
                         +texture(ceiling_specular_map,uv).rgb;
         // 저장값은 E/PI이므로 Lambert 수신면에서는 Kd만 곱한다.
-        return bounce_strength*Kd*irradiance;
+        return Kd*irradiance;
     }
     // 주변 물체의 정반사는 평면 반사 패스에서 받으므로 중복해서 더하지 않는다.
     bool glossy = planar_strength<=0.0 && any(greaterThan(Ks,vec3(0.0)));
@@ -144,7 +133,7 @@ vec3 ceiling_indirect(vec3 N, vec3 V, vec3 base_color)
         float angular_variance = bounce_parameters[i].y*emit/(2.0*PI*distance_squared);
         float source_power = max(1.0,1.0/(1.0/(bounce_parameters[i].x+2.0)+angular_variance)-2.0);
         float source_normalization = (source_power+2.0)/(bounce_parameters[i].x+2.0);
-        vec3 flux = indirect_diffuse_gain*bounce_diffuse_flux[i] + bounce_specular_flux[i]
+        vec3 flux = bounce_diffuse_flux[i] + bounce_specular_flux[i]
                   * source_normalization * pow(alignment,source_power);
         // 받는 PVC도 Lambert + Phong으로 평가한다. 시선이 변하면 반사 위치도 변한다.
         // 작은 패치를 점 광원으로 압축한 데서 오는 점무늬는 입체각만큼 lobe를 넓혀 줄인다.
@@ -160,7 +149,7 @@ vec3 ceiling_indirect(vec3 N, vec3 V, vec3 base_color)
     }
     // flux에는 패치 사이의 여러 차례 난반사가 누적되어 있다.
     // 현재 표면까지의 가림은 래스터화한 패치별 깊이 맵으로 확인한다.
-    return bounce_strength * result;
+    return result;
 }
 
 // SHADOW_FUNCTIONS

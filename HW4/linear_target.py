@@ -29,7 +29,6 @@ uniform float exposure;
 uniform sampler2D bloom_color;
 uniform float bloom_strength;
 uniform vec2 inverse_size;
-uniform bool antialias_enabled;
 
 vec3 linear_to_srgb(vec3 color)
 {
@@ -56,7 +55,6 @@ vec3 display_sample(vec2 coordinate)
 void main()
 {
     vec3 center=display_sample(uv);
-    if (!antialias_enabled) { final_color=vec4(center,1.0); return; }
     vec3 nw=display_sample(uv+inverse_size*vec2(-1,1));
     vec3 ne=display_sample(uv+inverse_size*vec2(1,1));
     vec3 sw=display_sample(uv+inverse_size*vec2(-1,-1));
@@ -84,7 +82,6 @@ class HdrTarget:
         self.size = (0, 0)
         self.fbo = None
         self.bloom = Bloom()
-        self.antialias_enabled = True
 
         self.program = ShaderProgram(
             Shader(POST_VERTEX, "vertex"),
@@ -167,7 +164,6 @@ class HdrTarget:
             self.program["bloom_color"] = 2
             self.program["bloom_strength"] = self.bloom.strength
             self.program["inverse_size"] = (1.0/w,1.0/h)
-            self.program["antialias_enabled"] = self.antialias_enabled
             self.quad.draw(GL_TRIANGLES)
         finally:
             glBindTexture(GL_TEXTURE_2D, 0)

@@ -19,7 +19,7 @@ def box_frame(positions):
     return axes, center, half
 
 
-def rounded_face(data, frame, bulge=0.0, *, enabled=True, ridge_height=0.0):
+def rounded_face(data, frame, bulge=0.0, *, ridge_height=0.0):
     """모서리·앞면의 휨과, 긴 중앙선을 따라 솟은 윗면을 만든다."""
     axes, center, half = frame
     # OBJ 반올림 때문에 UV가 정확히 0/1이 아닐 수 있으므로 삼각형의 affine map을 구한다.
@@ -60,10 +60,6 @@ def rounded_face(data, frame, bulge=0.0, *, enabled=True, ridge_height=0.0):
             rounded = [q + BEVEL_RADIUS * d for q, d in zip(inner, delta)]
             p = center + sum((axis * x for axis, x in zip(axes, rounded)), Vec3())
             n = sum((axis * x for axis, x in zip(axes, delta)), Vec3()).normalize()
-            if not enabled:
-                p = origin + du * u + dv * v
-                n = normal
-
             # 평면 영역 경계에서 변위와 기울기가 0이 되어 bevel과 자연스럽게 이어진다.
             eu, ev = BEVEL_RADIUS / du.length(), BEVEL_RADIUS / dv.length()
             if bulge and eu < u < 1-eu and ev < v < 1-ev:

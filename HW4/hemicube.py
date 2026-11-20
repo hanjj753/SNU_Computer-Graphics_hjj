@@ -7,7 +7,6 @@ cosine 가중치를 합산하는 Cohen/Greenberg의 hemicube 방식이다.
 from ctypes import byref
 import math
 
-import pyglet
 from pyglet.gl import *
 from pyglet.graphics.shader import Shader, ShaderProgram
 from pyglet.image.buffer import Framebuffer
@@ -91,7 +90,7 @@ float bounce_visibility(int index,vec3 source,vec3 normal,vec3 receiver,vec3 rec
 
 class Hemicube:
     def __init__(self, patches, occluders, light_positions, light_width, light_depth,
-                 *, receivers=None, keep_depth=True, resolution=RESOLUTION,hidden_names=()):
+                 *, receivers=None, keep_depth=True, resolution=RESOLUTION):
         self.resolution=resolution
         self.size=(resolution*3,resolution*2)
         self.count=len(patches)
@@ -101,7 +100,6 @@ class Hemicube:
         self.program=ShaderProgram(Shader(VERTEX,'vertex'),Shader(FRAGMENT,'fragment'))
         positions=[];ids=[]
         for index,patch in enumerate(patches):
-            if patch.name in hidden_names:continue
             for p in patch.vertices:positions.extend(p)
             # 곡면 패치는 실제 렌더링 메시의 여러 삼각형을 같은 ID로 묶는다.
             ids.extend([float(index+1)]*len(patch.vertices))
@@ -115,8 +113,7 @@ class Hemicube:
         ids.extend([float(self.count+1)]*6)
         self.vertices=self.program.vertex_list(len(ids),GL_TRIANGLES,
             POSITION=('f',positions),PATCH_ID=('f',ids))
-        self.weights=self._weights()
-        self.factors,self.direct_factors=self._capture(self.receivers)
+        self.factors,self.direct_factors=self._capture(self.receivers,self._weights())
 
     @staticmethod
     def basis(normal):
@@ -139,7 +136,7 @@ class Hemicube:
         total=sum(w for _,w in result)
         return [(index,w/total) for index,w in result]
 
-    def _capture(self,patches):
+    def _capture(self,patches,weights):
         old_fbo=GLint();old_active=GLint();viewport=(GLint*4)();write=GLboolean();cull=GLint()
         glGetIntegerv(GL_FRAMEBUFFER_BINDING,byref(old_fbo))
         glGetIntegerv(GL_ACTIVE_TEXTURE,byref(old_active));glGetIntegerv(GL_VIEWPORT,viewport)
@@ -186,7 +183,7 @@ class Hemicube:
                     self.vertices.draw(GL_TRIANGLES)
                 glReadPixels(0,0,*self.size,GL_RED_INTEGER,GL_UNSIGNED_INT,buffer)
                 row=[0.0]*(self.count+2)
-                for pixel,weight in self.weights:row[buffer[pixel]]+=weight
+                for pixel,weight in weights:row[buffer[pixel]]+=weight
                 if self.receiver_is_patch:row[index+1]=0.0
                 factors.append(row[1:self.count+1]);direct.append(row[self.count+1])
         finally:

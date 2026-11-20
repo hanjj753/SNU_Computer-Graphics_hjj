@@ -11,7 +11,6 @@ from hemicube import Hemicube
 
 MAX_BOUNCE_LIGHTS=128
 BOUNCE_COUNT=4       # 직접 조명을 받은 패치에서 시작해 다른 패치로 세 차례 더 전달한다.
-BOUNCE_STRENGTH=1.0
 PATCH_SUBDIVISIONS=2
 CEILING_MAP_SIZE=32
 
@@ -37,7 +36,6 @@ class Patch:
     reflectance: tuple
     specular: tuple
     shininess: float
-    name: str
 
 
 class CeilingBounce:
@@ -50,7 +48,7 @@ class CeilingBounce:
 
     def add_box_face(self,data,material,texture):
         """실제 곡면을 UV 영역별로 묶어, 가림 형상은 보존하고 반사광만 패치로 근사한다."""
-        color=average_linear_color(texture) if texture is not None else (1.,1.,1.)
+        color=average_linear_color(texture)
         ks=tuple(min(1.,max(0.,material.specular[c])) for c in range(3))
         rho=tuple(min(1.,max(0.,color[c]*material.diffuse[c]))*(1-ks[c]) for c in range(3))
         # 윗면은 아치를 가로지르는 짧은 방향을 더 잘게 나눈다.
@@ -78,11 +76,8 @@ class CeilingBounce:
             representative=min(triangles,key=lambda t:(t[1]-centroid).length_squared())
             vertices=tuple(v for t in triangles for v in t[3])
             self.patches.append(Patch(vertices,representative[1],representative[2],area,rho,
-                                      ks,material.shininess,material.name))
+                                      ks,material.shininess))
         if len(self.patches)>MAX_BOUNCE_LIGHTS:raise ValueError('간접광 패치 수가 128을 넘었습니다.')
-
-    def add_wall(self,positions,normals,material,inward):
-        self._add_surface(positions,normals,material,inward)
 
     def add_room_surface(self,positions,normals,material,inward):
         self._add_surface(positions,normals,material,inward)
@@ -91,12 +86,10 @@ class CeilingBounce:
         # 도넛은 가림에는 포함한다. 곡면의 추가 패치 반사는 이번 근사에서 생략한다.
         self.occluders.append(list(positions))
 
-    def _add_surface(self,positions,normals,material,normal,color=(1.,1.,1.)):
-        # shader.evaluate_brdf와 같은 Kd = clamp(base_color) * (1-Ks)를 쓴다.
-        # 텍스처는 면별 평균 선형 RGB로 근사하되, 간접광만의 배율은 곱하지 않는다.
-        # 0.95 상한도 따로 두지 않아 흰색 채널의 반사율이 두 계산에서 달라지지 않게 한다.
+    def _add_surface(self,positions,normals,material,normal):
+        # 방의 단색 면도 shader.evaluate_brdf와 같은 Kd = clamp(base_color) * (1-Ks)를 쓴다.
         ks=tuple(min(1.,max(0.,material.specular[c])) for c in range(3))
-        rho=tuple(min(1.,max(0.,color[c]*material.diffuse[c]))*(1-ks[c]) for c in range(3))
+        rho=tuple(min(1.,max(0.,material.diffuse[c]))*(1-ks[c]) for c in range(3))
         n=PATCH_SUBDIVISIONS
         for i in range(0,len(positions),9):
             if Vec3(*normals[i:i+3]).dot(normal)<.99:continue
@@ -112,7 +105,7 @@ class CeilingBounce:
                 if (q-p).cross(r-p).dot(normal)<0:q,r=r,q
                 area=(q-p).cross(r-p).length()*.5
                 self.patches.append(Patch((p,q,r),(p+q+r)/3,normal,area,rho,
-                                          ks,material.shininess,material.name))
+                                          ks,material.shininess))
         if len(self.patches)>MAX_BOUNCE_LIGHTS:raise ValueError('간접광 패치 수가 128을 넘었습니다.')
 
     def prepare(self):
@@ -130,15 +123,6 @@ class CeilingBounce:
                            receivers=self.ceiling_receivers,keep_depth=False,resolution=48)
             self.ceiling_factors=gather.factors
             gather.delete()
-            # 상자를 뺀 비교 장면에서도 같은 위치를 래스터화한다. 이 비율은
-            # 계산된 GI를 다시 깎는 데 쓰지 않고, 기존 추가 밝기 보정을 제한한다.
-            hidden={patch.name for patch in self.patches if patch.name.startswith('Pie_')}
-            clear=Hemicube(self.patches,self.occluders,self.light_positions,.60,.60,
-                          receivers=self.ceiling_receivers,keep_depth=False,resolution=48,hidden_names=hidden)
-            floor=[i for i,patch in enumerate(self.patches) if patch.name=='wall_white' and patch.normal.y>.99]
-            self.ceiling_floor_visibility=[min(1.,sum(row[i] for i in floor)/max(sum(reference[i] for i in floor),1e-6))
-                for row,reference in zip(self.ceiling_factors,clear.factors)]
-            clear.delete()
             self._update_ceiling_maps()
 
     def solve(self,bounce_count=BOUNCE_COUNT):
@@ -148,14 +132,14 @@ class CeilingBounce:
         light_radiance=tuple(c*self.light_intensity/self.hemicube.light_area for c in self.light_color)
         first=[tuple(p.reflectance[c]*f*light_radiance[c] for c in range(3))
                for p,f in zip(self.patches,self.hemicube.direct_factors)]
-        self.orders=[first]
+        orders=[first]
         for _ in range(1,self.bounce_count):
-            previous=self.orders[-1];order=[]
+            previous=orders[-1];order=[]
             for patch,row in zip(self.patches,self.hemicube.factors):
                 received=[sum(f*value[c] for f,value in zip(row,previous)) for c in range(3)]
                 order.append(tuple(patch.reflectance[c]*received[c] for c in range(3)))
-            self.orders.append(order)
-        self.radiance=[tuple(sum(order[i][c] for order in self.orders) for c in range(3)) for i in range(len(first))]
+            orders.append(order)
+        self.radiance=[tuple(sum(order[i][c] for order in orders) for c in range(3)) for i in range(len(first))]
         if self.ceiling_factors is not None:self._update_ceiling_maps()
 
     def _update_ceiling_maps(self):
@@ -163,8 +147,8 @@ class CeilingBounce:
         # 다중 반사 횟수를 바꿀 때 가림을 다시 그릴 필요 없이 색만 갱신할 수 있다.
         source_spec=[self._specular_source(p,f) for p,f in zip(self.patches,self.hemicube.direct_factors)]
         diffuse=[];specular=[]
-        for receiver,row,visibility in zip(self.ceiling_receivers,self.ceiling_factors,self.ceiling_floor_visibility):
-            diffuse.extend([sum(f*value[c] for f,value in zip(row,self.radiance)) for c in range(3)]+[visibility])
+        for receiver,row in zip(self.ceiling_receivers,self.ceiling_factors):
+            diffuse.extend([sum(f*value[c] for f,value in zip(row,self.radiance)) for c in range(3)]+[1.])
             value=[0.,0.,0.]
             for patch,f,(flux,reflection,power) in zip(self.patches,row,source_spec):
                 if f<=0:continue
@@ -210,7 +194,7 @@ class CeilingBounce:
         if self.hemicube is None:self.prepare()
         count=len(self.patches);padding=MAX_BOUNCE_LIGHTS-count
         spec=[self._specular_source(p,f) for p,f in zip(self.patches,self.hemicube.direct_factors)]
-        program['bounce_count']=count;program['bounce_strength']=BOUNCE_STRENGTH
+        program['bounce_count']=count
         program['bounce_positions']=[tuple(p.center) for p in self.patches]+[(0.,0.,0.)]*padding
         program['bounce_normals']=[tuple(p.normal) for p in self.patches]+[(0.,1.,0.)]*padding
         program['bounce_diffuse_flux']=[tuple(c*p.area for c in value) for p,value in zip(self.patches,self.radiance)]+[(0.,0.,0.)]*padding

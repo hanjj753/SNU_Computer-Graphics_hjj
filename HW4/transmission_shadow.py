@@ -42,7 +42,6 @@ class WaterTransmissionShadow:
     def __init__(self, shadow, water, light_positions, size=512):
         self.shadow, self.water = shadow, water
         self.light_positions, self.size = light_positions, size
-        self.strength = 1.0
         self.dirty = True
         self.program = ShaderProgram(Shader(VERTEX,"vertex"),Shader(FRAGMENT,"fragment"))
         self.vertices = self.program.vertex_list(
@@ -67,16 +66,14 @@ class WaterTransmissionShadow:
 
     def render(self):
         if not self.dirty: return
-        viewport, clear = (GLint*4)(), (GLfloat*4)()
+        viewport = (GLint*4)()
         glGetIntegerv(GL_VIEWPORT,viewport)
-        glGetFloatv(GL_COLOR_CLEAR_VALUE,clear)
         self.fbo.bind()
         glViewport(0,0,self.size,self.size)
         glEnable(GL_DEPTH_TEST)
         glDepthMask(GL_TRUE)
         glDisable(GL_BLEND)
         glEnable(GL_CULL_FACE)
-        glClearColor(1000.0,0.0,0.0,0.0)
         self.program.use()
         self.program["ior"] = self.water.ior
         try:
@@ -92,7 +89,6 @@ class WaterTransmissionShadow:
                     self.vertices.draw(GL_TRIANGLES)
             self.dirty = False
         finally:
-            glClearColor(*clear)
             glCullFace(GL_BACK)
             glDisable(GL_CULL_FACE)
             self.fbo.unbind()
@@ -104,7 +100,6 @@ class WaterTransmissionShadow:
             glBindTexture(GL_TEXTURE_2D_ARRAY,texture.value)
             program[name] = unit
         program["shadow_absorption"] = self.water.absorption
-        program["transmission_shadow_strength"] = self.strength
         glActiveTexture(GL_TEXTURE0)
 
 
@@ -147,14 +142,14 @@ void main(){
 
 class CupTransmissionShadow:
     """컵의 모든 경계를 통과한 광학 두께를 누적해 반투명 그림자를 만든다."""
-    def __init__(self, shadow, cup_mesh, light_positions, size=1024, *, water_level=None):
+    def __init__(self, shadow, cup_mesh, light_positions, size=1024, *, water_level):
         self.shadow, self.mesh = shadow, cup_mesh
         self.light_positions, self.size = light_positions, size
-        self.strength, self.dirty = 1.0, True
+        self.dirty = True
         self.body_transmittance = CUP_BODY_TRANSMITTANCE
         self.dry_body_transmittance = CUP_DRY_BODY_TRANSMITTANCE
         self.rim_transmittance = CUP_RIM_TRANSMITTANCE
-        self.water_level = min(cup_mesh.positions[1::3]) if water_level is None else water_level
+        self.water_level = water_level
         self.program = ShaderProgram(Shader(CUP_VERTEX,"vertex"),Shader(CUP_FRAGMENT,"fragment"))
         self.vertices = self.program.vertex_list(
             len(cup_mesh.positions)//3,GL_TRIANGLES,
@@ -221,5 +216,4 @@ class CupTransmissionShadow:
             glActiveTexture(GL_TEXTURE0+unit)
             glBindTexture(GL_TEXTURE_2D_ARRAY,texture.value)
             program[name]=unit
-        program["cup_shadow_strength"]=self.strength
         glActiveTexture(GL_TEXTURE0)

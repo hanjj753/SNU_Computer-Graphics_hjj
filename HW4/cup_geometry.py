@@ -16,9 +16,6 @@ class CupMesh:
     normals: list
     rim_base_y: float
     center: tuple
-    inner_radius: float
-    outer_radius: float
-    rim_top_y: float
     outer_profile: tuple
     inner_profile: tuple
     base_thickness: float
@@ -79,6 +76,6 @@ def build_cup_mesh(positions):
             if rb>0: triangle(ai,bi,bj)
             if ra>0: triangle(ai,bj,aj)
 
-    return CupMesh(result_positions,result_normals,base,(cx,cz),r_inner_top,outer_lip,top,
+    return CupMesh(result_positions,result_normals,base,(cx,cz),
                    ((bottom,r_bottom),(base,body_radius)),
                    ((inner_bottom,r_inner_bottom),(base,inner_base)),inner_bottom-bottom)

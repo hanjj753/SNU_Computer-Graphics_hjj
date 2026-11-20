@@ -6,10 +6,8 @@ uniform mat4 light_view_projections[MAX_LIGHTS];
 uniform sampler2DArray water_shadow_front;
 uniform sampler2DArray water_shadow_back;
 uniform vec3 shadow_absorption;
-uniform float transmission_shadow_strength;
 uniform sampler2DArray cup_shadow_tau;
 uniform sampler2DArray cup_shadow_exit;
-uniform float cup_shadow_strength;
 
 float shadow_visibility(int i, vec3 N) {
     vec4 clip = light_view_projections[i] * vec4(world_position, 1.0);
@@ -39,7 +37,7 @@ vec3 water_transmission(int i) {
     float thickness = max(min(receiver,exit.r)-entry.r,0.0);
     float interfaces = (1.0-entry.g)*(receiver>=exit.r ? 1.0-exit.g : 1.0);
     vec3 transmission = interfaces*exp(-shadow_absorption*thickness);
-    return mix(vec3(1.0),transmission,transmission_shadow_strength);
+    return transmission;
 }
 
 float cup_transmission(int i) {
@@ -62,6 +60,6 @@ float cup_transmission(int i) {
         float weight=(x==0?2.0:1.0)*(y==0?2.0:1.0);
         transmission+=weight*T;
     }
-    return mix(1.0,transmission/16.0,cup_shadow_strength);
+    return transmission/16.0;
 }
 """

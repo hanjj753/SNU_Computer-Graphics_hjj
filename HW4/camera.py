@@ -7,7 +7,6 @@ class TrackballCamera:
     def __init__(self, eye:Vec3, center:Vec3, fov:float, up:Vec3=Vec3(0.0, 1.0, 0.0), near:float=0.01, far:float=100) :
         
         self.center = center
-        self.initial_eye = eye
         eye_offset = eye - center
         self.initial_distance = eye_offset.length()
         self.fov = fov

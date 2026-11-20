@@ -10,11 +10,9 @@ MATERIAL_PRESETS = {
 
     "torus_mint": ((0.03, 0.03, 0.03), 9.0),
     "Cup": ((0.04, 0.04, 0.04), 96.0),
-    # 물의 최종 광학 계산은 water_optics.py의 별도 셰이더가 담당한다.
-    "Water": ((0.0, 0.0, 0.0), 160.0),
 
     "Default": ((0.008, 0.008, 0.008), 40.0),
-    # 윗면은 윤곽이 흐릿하게 비치는 코팅. 반사 계수는 유지하고 lobe를 넓힌다.
+    # 윗면 코팅은 윤곽이 흐릿하게 비치는 광택으로 근사한다.
     "Pie_top": ((0.04, 0.04, 0.04), 24.0),
     # 앞면의 코팅은 넓고 완만한 정반사 분포로 근사한다.
     "Pie_front": ((0.045, 0.045, 0.045), 20.0),
@@ -24,7 +22,6 @@ MATERIAL_PRESETS = {
 
 OPACITY_PRESETS = {
     "Cup": 0.12,
-    "Water": 0.0,
 }
 
 # 현재 조명, HDR 노출 2.4, 카메라에서 실물 사진에 맞춘 선형 RGB 보정값.
@@ -37,8 +34,6 @@ DIFFUSE_PRESETS = {
     "wall_green": (0.006, 0.060, 0.019),
     "torus_mint": (0.20, 0.73, 0.43),
     "Cup": (0.72, 0.74, 0.77),
-    # 맑은 물에 흰 난반사를 넣으면 우유처럼 보이므로 정반사만 남긴다.
-    "Water": (0.0, 0.0, 0.0),
     "Ground": (0.30, 0.19, 0.10),
     "Default": (0.80, 0.80, 0.84),
 }
@@ -60,7 +55,7 @@ MESH_SPECULAR_PRESETS = {
     for name in MESH_DIFFUSE_PRESETS if name.startswith("Ceiling")
 }
 
-# 간접광을 실제로 추적하는 대신 ambient 항의 크기를 보정한다.
+# 계산한 간접광과 별개로, 균일한 ambient 항의 크기를 보정한다.
 # BRDF 계수와는 별개이며, 지정하지 않은 재질은 1.0을 사용한다.
 AMBIENT_SCALE_PRESETS = {
     "wall_red": 0.30,
@@ -76,7 +71,7 @@ AMBIENT_SCALE_PRESETS = {
 
 MESH_AMBIENT_SCALE_PRESETS = {
     "Floor_Cube.001": 0.12,
-    # 뒷벽은 계산한 직접광·간접광으로 밝히고, 균일한 ambient는 더하지 않는다.
+    # 뒷벽에는 작은 ambient만 더해 직접광·간접광의 명암을 유지한다.
     "Back_Wall_Cube.002": 0.1,
     "Ceiling1_Cube.005": 0.0,
     "Ceiling2_Cube.006": 0.0,
@@ -106,8 +101,6 @@ def apply_material_preset(material, mesh_name=None):
     material.receive_ceiling_bounce = material.name in ("wall_white","wall_red","wall_green") or (
         material.name.startswith("Pie_") and material.name!="Pie_bottom"
     )
-    # Use the computed GI without an extra brightness multiplier.
-    material.indirect_diffuse_gain = 1.0
     material.baked_ceiling_surface = bool(mesh_name and mesh_name.startswith("Ceiling"))
     material.planar_plane = (
         "ceiling" if mesh_name and mesh_name.startswith("Ceiling") else
@@ -135,21 +128,16 @@ class PhongMaterialGroup(pyglet.model.MaterialGroup) :
 
         self.program["specular_color"] = self.material.specular[:3]
         self.program["shininess"] = self.material.shininess
-        self.program["surface_grain"] = getattr(self.material,"surface_grain",0.0)
-        self.program["indirect_diffuse_gain"] = getattr(self.material,"indirect_diffuse_gain",1.0)
-        self.program["baked_ceiling_surface"] = getattr(self.material,"baked_ceiling_surface",False)
+        self.program["surface_grain"] = self.material.surface_grain
+        self.program["baked_ceiling_surface"] = self.material.baked_ceiling_surface
         self.program["cup_surface"] = self.material.name=="Cup"
         self.program["contact_occlusion_height"] = (
             0.04 if self.material.name.startswith("Pie_") else 0.0
         )
-        self.program["ambient_scale"] = getattr(
-            self.material, "ambient_scale", 1.0
-        )
-        self.program["receive_ceiling_bounce"] = getattr(
-            self.material, "receive_ceiling_bounce", False
-        )
+        self.program["ambient_scale"] = self.material.ambient_scale
+        self.program["receive_ceiling_bounce"] = self.material.receive_ceiling_bounce
 
-        texture = getattr(self.material, "diffuse_texture", None)
+        texture = self.material.diffuse_texture
         self.program["use_texture"] = texture is not None
 
         if texture is not None:
