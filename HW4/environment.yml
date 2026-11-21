@@ -3,6 +3,9 @@ channels:
   - defaults
 dependencies:
   - python=3.12
+  # tools/prepare_chocopie_colors.py의 오프라인 이미지 처리 의존성.
+  - numpy
+  - pillow
   - pip
   - pip:
       - pyglet==2.1.16

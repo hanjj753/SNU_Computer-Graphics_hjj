@@ -17,16 +17,18 @@ from transmission_shadow import WaterTransmissionShadow, CupTransmissionShadow
 from cup_geometry import build_cup_mesh
 from planar_reflection import PlanarReflections
 from HUD import HUD
+from tools.capture_frame import save_frame
 from pathlib import Path
 from io import StringIO
 from copy import copy
 import re
 import random
 
-# 왼쪽 아래를 (0, 0, 0)으로 놓았을 때 Cornell box의 정 중앙의 좌표가 (1.45, 1.5, -1.5) 
-center = Vec3(1.45, 1.50, -1.50)
-eye = Vec3(1.45, 1.50, 5.00) # camera가 (1.45, 1.5, 5)
-fov = 53.0  # 실물 사진에서 상자가 차지하는 비율에 맞춘 화각.
+# 원본 사진을 960×720으로 맞춘 뒤, 방과 상자 모서리 12점의 투영 위치로 보정한 초기 시점.
+# center는 공간의 기하학적 중심이 아니라 카메라가 바라보는 점이다.
+center = Vec3(1.3705, 1.7685, -1.50)
+eye = Vec3(1.4376, 1.4747, 5.0614)
+fov = 52.6253  # 세로 화각(도). 카메라 거리·방향과 함께 맞춘 근사값.
 
 width = 960
 height = 720
@@ -34,6 +36,7 @@ height = 720
 mouseRotatePressed = False
 mouseMovePressed   = False
 mouseDollyPressed   = False
+initial_frame_saved = False
 
 camera = TrackballCamera(eye=eye, center=center, fov=fov)
 window = pyglet.window.Window( width, height, resizable=True, caption="Cornell Box" )
@@ -48,6 +51,8 @@ def on_resize(width, height):
 
 @window.event
 def on_draw():
+    global initial_frame_saved
+
     # 광원과 물체가 고정되어 있으면 첫 프레임의 깊이 맵을 재사용한다.
     shadow.render()
     water_shadow.render()
@@ -88,6 +93,7 @@ def on_draw():
     glDisable(GL_BLEND)
     window.clear()
     draw_opaque_scene()
+    render_target.resolve()  # MSAA 샘플을 합친 뒤 컵·물의 굴절 배경으로 사용한다.
 
     water.prepare_depth(window, render_target)
     # 뒤쪽 컵 → 배경 저장 → 물 → 앞쪽 컵 순서로 합성한다.
@@ -98,6 +104,11 @@ def on_draw():
     
     render_target.present()
     hud.draw()
+
+    # 첫 화면을 HUD까지 그린 뒤 한 번만 저장한다. 이후 카메라 조작으로 덮어쓰지 않는다.
+    if not initial_frame_saved:
+        save_frame(base_dir / "pictures" / "rendered_Cornell Box.png")
+        initial_frame_saved = True
 
 
 def draw_opaque_scene():

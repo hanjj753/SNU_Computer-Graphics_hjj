@@ -103,9 +103,12 @@ class HdrTarget:
                 self.fbo.delete()
                 self.color.delete()
                 self.depth.delete()
+                self.msaa_fbo.delete()
+                self.msaa_color.delete()
+                self.msaa_depth.delete()
 
             # 16비트 부동소수점으로 1보다 큰 조명값도 보존한다.
-            # 불투명 물체와 투명 물체 모두 이 선형 RGB 저장소에 그린다.
+            # 불투명 장면의 MSAA 결과를 받은 뒤, 투명 물체를 이 저장소에 합성한다.
             self.color = pyglet.image.Texture.create(
                 w, h,
                 internalformat=GL_RGBA16F,
@@ -127,14 +130,37 @@ class HdrTarget:
             if not self.fbo.is_complete:
                 raise RuntimeError(self.fbo.get_status())
 
+            # 픽셀 안의 네 위치에서 도형이 덮는 영역과 깊이를 구한다.
+            # 최종 색만 흐리는 FXAA보다 길게 비스듬한 모서리를 잘 보존한다.
+            self.msaa_color = Renderbuffer(w, h, GL_RGBA16F, samples=4)
+            self.msaa_depth = Renderbuffer(w, h, GL_DEPTH_COMPONENT24, samples=4)
+            self.msaa_fbo = Framebuffer()
+            self.msaa_fbo.attach_renderbuffer(self.msaa_color)
+            self.msaa_fbo.attach_renderbuffer(
+                self.msaa_depth, attachment=GL_DEPTH_ATTACHMENT
+            )
+            self.msaa_fbo.bind()
+            if not self.msaa_fbo.is_complete:
+                raise RuntimeError(self.msaa_fbo.get_status())
+
             self.size = (w, h)
             glBindTexture(GL_TEXTURE_2D, 0)
 
-        self.fbo.bind()
+        self.msaa_fbo.bind()
+        glEnable(GL_MULTISAMPLE)
         glViewport(0, 0, w, h)
 
         # 색이 이미 선형 float이므로 sRGB 변환 없이 저장·합성한다.
         glDisable(GL_FRAMEBUFFER_SRGB)
+
+    def resolve(self):
+        """불투명 장면의 샘플을 합쳐, 컵·물이 읽을 단일 색·깊이 버퍼로 옮긴다."""
+        w, h = self.size
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, self.msaa_fbo.id)
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, self.fbo.id)
+        glBlitFramebuffer(0, 0, w, h, 0, 0, w, h,
+                          GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST)
+        self.fbo.bind()
 
     def present(self):
         w, h = self.size
