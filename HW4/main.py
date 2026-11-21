@@ -193,7 +193,7 @@ if not 1 <= GRID_SIZE <= 4:
     raise ValueError("GRID_SIZE는 1부터 4까지 사용할 수 있습니다.")
 
 # 실제 천장 구멍의 중앙. 모든 샘플이 발광판 범위 안에 놓인다.
-light_center = Vec3(1.45, 2.98, -1.50)
+light_center = Vec3(1.45, 3.001, -1.50)
 
 light_width = 0.60
 light_depth = 0.60
@@ -229,7 +229,7 @@ program["light_count"] = light_count
 
 # 실제 광원은 S24의 흰 화면이다. 화면 설정과 촬영 WB를 분리 측정하지 않았으므로
 # 이 값은 해당 사진의 바닥 조명에 맞춘 선형 RGB 상대값이다.
-light_color = (0.75, 0.85, 1.15)
+light_color = (0.75, 0.85, 1.00)
 program["light_color"] = light_color
 program["light_normal"] = (0.0, -1.0, 0.0)
 light_intensity = 38.0
