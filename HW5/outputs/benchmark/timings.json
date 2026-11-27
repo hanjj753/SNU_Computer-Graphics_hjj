@@ -1,0 +1,412 @@
+{
+  "scene": {
+    "triangles": 12196,
+    "bvh_nodes": 7623,
+    "bvh_depth": 19,
+    "bvh_build_seconds": 0.8444193000323139,
+    "scene_load_seconds": 1.7383175999857485,
+    "objects": {
+      "box_front": 1152,
+      "box_left": 1152,
+      "box_back": 1152,
+      "box_right": 1152,
+      "box_bottom": 1152,
+      "box_top": 1152,
+      "plastic_cup": 1344,
+      "Torus_Torus": 1152,
+      "Floor_Cube.001": 12,
+      "Back_Wall_Cube.002": 12,
+      "Left_Wall_Cube.003": 12,
+      "Right_Wall_Cube.004": 12,
+      "Ceiling1_Cube.005": 12,
+      "Ceiling2_Cube.006": 12,
+      "Ceiling3_Cube.007": 12,
+      "Ceiling4_Cube.008": 12,
+      "water": 2688,
+      "ground": 2,
+      "area_light": 2
+    },
+    "materials": [
+      "back",
+      "floor",
+      "ceiling",
+      "red",
+      "green",
+      "mint",
+      "ground",
+      "plastic",
+      "water",
+      "box_front",
+      "box_back",
+      "box_right",
+      "box_left",
+      "box_top",
+      "box_bottom",
+      "area_light"
+    ],
+    "config": {
+      "camera": {
+        "eye": [
+          1.4376,
+          1.4747,
+          5.0614
+        ],
+        "target": [
+          1.3705,
+          1.7685,
+          -1.5
+        ],
+        "up": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fov": 52.6253,
+        "focus_distance": 6.9,
+        "aperture": 0.0
+      },
+      "light": {
+        "center": [
+          1.45,
+          3.002,
+          -1.5
+        ],
+        "width": 0.6,
+        "depth": 0.6,
+        "radiance": [
+          79.17,
+          89.72,
+          105.56
+        ]
+      },
+      "exposure": 2.4,
+      "materials": {
+        "back": {
+          "color": [
+            0.43,
+            0.41,
+            0.44
+          ],
+          "specular": 0.008,
+          "exponent": 24.0
+        },
+        "floor": {
+          "color": [
+            0.65,
+            0.73,
+            0.85
+          ],
+          "specular": 0.01,
+          "exponent": 32.0
+        },
+        "ceiling": {
+          "color": [
+            0.68,
+            0.68,
+            0.68
+          ],
+          "specular": 0.16,
+          "exponent": 24.0
+        },
+        "red": {
+          "color": [
+            0.42,
+            0.018,
+            0.025
+          ],
+          "specular": 0.09,
+          "exponent": 18.0
+        },
+        "green": {
+          "color": [
+            0.008,
+            0.095,
+            0.03
+          ],
+          "specular": 0.09,
+          "exponent": 18.0
+        },
+        "mint": {
+          "color": [
+            0.2,
+            0.73,
+            0.43
+          ],
+          "specular": 0.03,
+          "exponent": 9.0
+        },
+        "ground": {
+          "color": [
+            0.3,
+            0.19,
+            0.1
+          ],
+          "specular": 0.0,
+          "exponent": 16.0
+        },
+        "box": {
+          "color": [
+            0.8,
+            0.8,
+            0.84
+          ],
+          "specular": 0.045,
+          "exponent": 20.0
+        },
+        "plastic": {
+          "color": [
+            0.72,
+            0.74,
+            0.77
+          ],
+          "ior": 1.49,
+          "absorption": [
+            0.1,
+            0.06,
+            0.025
+          ],
+          "diffuse_interface": 0.08
+        },
+        "water": {
+          "ior": 1.333,
+          "absorption": [
+            0.18,
+            0.07,
+            0.035
+          ]
+        }
+      }
+    }
+  },
+  "runs": {
+    "bvh": [
+      {
+        "options": {
+          "width": 128,
+          "height": 96,
+          "spp": 4,
+          "max_depth": 12,
+          "diffuse_bounces": 3,
+          "light_samples": 1,
+          "seed": 2026,
+          "use_bvh": true,
+          "shadows": true,
+          "reflections": true,
+          "refraction": true,
+          "indirect": true,
+          "textures": true,
+          "antialias": true,
+          "hard_shadows": false,
+          "absorption": true,
+          "aperture": null,
+          "focus_distance": null
+        },
+        "threads": 12,
+        "warmup_seconds": 0.46810489997733384,
+        "render_seconds": 0.03172969998558983,
+        "elapsed_seconds": 0.031960500054992735,
+        "rays": 159997,
+        "triangle_tests": 1246746,
+        "linear_mean": [
+          0.19391912500403932,
+          0.17500659483616407,
+          0.20267540557479455
+        ],
+        "linear_max": 105.56,
+        "rays_per_second": 5042499.616216456
+      },
+      {
+        "options": {
+          "width": 128,
+          "height": 96,
+          "spp": 4,
+          "max_depth": 12,
+          "diffuse_bounces": 3,
+          "light_samples": 1,
+          "seed": 2026,
+          "use_bvh": true,
+          "shadows": true,
+          "reflections": true,
+          "refraction": true,
+          "indirect": true,
+          "textures": true,
+          "antialias": true,
+          "hard_shadows": false,
+          "absorption": true,
+          "aperture": null,
+          "focus_distance": null
+        },
+        "threads": 12,
+        "warmup_seconds": 8.620001608505845e-05,
+        "render_seconds": 0.03522670001257211,
+        "elapsed_seconds": 0.035363600007258356,
+        "rays": 159997,
+        "triangle_tests": 1246746,
+        "linear_mean": [
+          0.19391912500403932,
+          0.17500659483616407,
+          0.20267540557479455
+        ],
+        "linear_max": 105.56,
+        "rays_per_second": 4541924.163855781
+      },
+      {
+        "options": {
+          "width": 128,
+          "height": 96,
+          "spp": 4,
+          "max_depth": 12,
+          "diffuse_bounces": 3,
+          "light_samples": 1,
+          "seed": 2026,
+          "use_bvh": true,
+          "shadows": true,
+          "reflections": true,
+          "refraction": true,
+          "indirect": true,
+          "textures": true,
+          "antialias": true,
+          "hard_shadows": false,
+          "absorption": true,
+          "aperture": null,
+          "focus_distance": null
+        },
+        "threads": 12,
+        "warmup_seconds": 0.00013370002852752805,
+        "render_seconds": 0.036430500040296465,
+        "elapsed_seconds": 0.036599199986085296,
+        "rays": 159997,
+        "triangle_tests": 1246746,
+        "linear_mean": [
+          0.19391912500403932,
+          0.17500659483616407,
+          0.20267540557479455
+        ],
+        "linear_max": 105.56,
+        "rays_per_second": 4391841.995663642
+      }
+    ],
+    "brute_force": [
+      {
+        "options": {
+          "width": 128,
+          "height": 96,
+          "spp": 4,
+          "max_depth": 12,
+          "diffuse_bounces": 3,
+          "light_samples": 1,
+          "seed": 2026,
+          "use_bvh": false,
+          "shadows": true,
+          "reflections": true,
+          "refraction": true,
+          "indirect": true,
+          "textures": true,
+          "antialias": true,
+          "hard_shadows": false,
+          "absorption": true,
+          "aperture": null,
+          "focus_distance": null
+        },
+        "threads": 12,
+        "warmup_seconds": 0.00032569997711107135,
+        "render_seconds": 1.6656369999982417,
+        "elapsed_seconds": 1.6658244999707676,
+        "rays": 159997,
+        "triangle_tests": 1951323412,
+        "linear_mean": [
+          0.19391912500403932,
+          0.17500659483616407,
+          0.20267540557479455
+        ],
+        "linear_max": 105.56,
+        "rays_per_second": 96057.54435100139
+      },
+      {
+        "options": {
+          "width": 128,
+          "height": 96,
+          "spp": 4,
+          "max_depth": 12,
+          "diffuse_bounces": 3,
+          "light_samples": 1,
+          "seed": 2026,
+          "use_bvh": false,
+          "shadows": true,
+          "reflections": true,
+          "refraction": true,
+          "indirect": true,
+          "textures": true,
+          "antialias": true,
+          "hard_shadows": false,
+          "absorption": true,
+          "aperture": null,
+          "focus_distance": null
+        },
+        "threads": 12,
+        "warmup_seconds": 0.0003407999756745994,
+        "render_seconds": 1.6487893000012264,
+        "elapsed_seconds": 1.6489873999962583,
+        "rays": 159997,
+        "triangle_tests": 1951323412,
+        "linear_mean": [
+          0.19391912500403932,
+          0.17500659483616407,
+          0.20267540557479455
+        ],
+        "linear_max": 105.56,
+        "rays_per_second": 97039.08194933155
+      },
+      {
+        "options": {
+          "width": 128,
+          "height": 96,
+          "spp": 4,
+          "max_depth": 12,
+          "diffuse_bounces": 3,
+          "light_samples": 1,
+          "seed": 2026,
+          "use_bvh": false,
+          "shadows": true,
+          "reflections": true,
+          "refraction": true,
+          "indirect": true,
+          "textures": true,
+          "antialias": true,
+          "hard_shadows": false,
+          "absorption": true,
+          "aperture": null,
+          "focus_distance": null
+        },
+        "threads": 12,
+        "warmup_seconds": 0.0003828999469988048,
+        "render_seconds": 1.6346790999523364,
+        "elapsed_seconds": 1.6348066999926232,
+        "rays": 159997,
+        "triangle_tests": 1951323412,
+        "linear_mean": [
+          0.19391912500403932,
+          0.17500659483616407,
+          0.20267540557479455
+        ],
+        "linear_max": 105.56,
+        "rays_per_second": 97876.7025311972
+      }
+    ]
+  },
+  "median_render_seconds": {
+    "bvh": 0.03522670001257211,
+    "brute_force": 1.6487893000012264
+  },
+  "speedup": 46.80510236305948,
+  "bvh_build_seconds": 0.8444193000323139,
+  "bvh_build_plus_median_render_seconds": 0.879646000044886,
+  "same_image": true,
+  "linear_max_abs_difference": 0.0,
+  "linear_rmse": 0.0,
+  "timing_note": "wall-clock CPU rendering only; excludes scene loading, BVH construction, JIT/warmup, file I/O",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "python": "3.13.9",
+  "numpy": "2.3.5",
+  "numba": "0.62.1"
+}

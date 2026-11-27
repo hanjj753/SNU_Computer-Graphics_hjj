@@ -1,0 +1,21 @@
+test_denoising_reduces_noise_without_crossing_material_edge (test_raytracer.OpticsTests.test_denoising_reduces_noise_without_crossing_material_edge) ... ok
+test_display_transfer (test_raytracer.OpticsTests.test_display_transfer) ... ok
+test_nested_medium_stack (test_raytracer.OpticsTests.test_nested_medium_stack) ... ok
+test_normal_incidence_fresnel_and_direction (test_raytracer.OpticsTests.test_normal_incidence_fresnel_and_direction) ... ok
+test_snell_and_total_internal_reflection (test_raytracer.OpticsTests.test_snell_and_total_internal_reflection) ... ok
+test_two_sided_triangle_and_parallel_box (test_raytracer.OpticsTests.test_two_sided_triangle_and_parallel_box) ... ok
+test_area_light_visibility_has_umbra_penumbra_and_lit_region (test_raytracer.SceneTests.test_area_light_visibility_has_umbra_penumbra_and_lit_region) ... ok
+test_bilinear_texture_preserves_uv_corners (test_raytracer.SceneTests.test_bilinear_texture_preserves_uv_corners) ... ok
+test_bvh_matches_brute_force_for_arbitrary_rays (test_raytracer.SceneTests.test_bvh_matches_brute_force_for_arbitrary_rays) ... ok
+test_bvh_render_equivalence_and_seed_reproducibility (test_raytracer.SceneTests.test_bvh_render_equivalence_and_seed_reproducibility) ... ok
+test_closed_outward_dielectric_meshes (test_raytracer.SceneTests.test_closed_outward_dielectric_meshes) ... ok
+test_coincident_triangles_use_stable_primitive_id (test_raytracer.SceneTests.test_coincident_triangles_use_stable_primitive_id) ... ok
+test_glossy_only_continuation_preserves_direct_diffuse_energy (test_raytracer.SceneTests.test_glossy_only_continuation_preserves_direct_diffuse_energy) ... ok
+test_integrator_follows_reflection_to_visible_emitter (test_raytracer.SceneTests.test_integrator_follows_reflection_to_visible_emitter) ... ok
+test_integrator_transmits_through_both_dielectric_boundaries (test_raytracer.SceneTests.test_integrator_transmits_through_both_dielectric_boundaries) ... ok
+test_thin_lens_rays_converge_on_focus_plane (test_raytracer.SceneTests.test_thin_lens_rays_converge_on_focus_plane) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 24.069s
+
+OK

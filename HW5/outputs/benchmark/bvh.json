@@ -1,0 +1,38 @@
+{
+  "options": {
+    "width": 128,
+    "height": 96,
+    "spp": 4,
+    "max_depth": 12,
+    "diffuse_bounces": 3,
+    "light_samples": 1,
+    "seed": 2026,
+    "use_bvh": true,
+    "shadows": true,
+    "reflections": true,
+    "refraction": true,
+    "indirect": true,
+    "textures": true,
+    "antialias": true,
+    "hard_shadows": false,
+    "absorption": true,
+    "aperture": null,
+    "focus_distance": null
+  },
+  "threads": 12,
+  "warmup_seconds": 0.00013370002852752805,
+  "render_seconds": 0.036430500040296465,
+  "elapsed_seconds": 0.036599199986085296,
+  "rays": 159997,
+  "triangle_tests": 1246746,
+  "linear_mean": [
+    0.19391912500403932,
+    0.17500659483616407,
+    0.20267540557479455
+  ],
+  "linear_max": 105.56,
+  "rays_per_second": 4391841.995663642,
+  "exposure": 2.4,
+  "tone_mapping": "Reinhard, then exact sRGB transfer",
+  "output": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\benchmark\\bvh.png"
+}

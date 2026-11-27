@@ -1,0 +1,16 @@
+{
+  "scene": "independent planar-occluder diagnostic, not the Cornell render",
+  "light_y": 2.0,
+  "occluder_y": 1.0,
+  "occluder_half_width": 0.35,
+  "receiver_y": 0.0,
+  "area_light_width": 1.0,
+  "samples_per_receiver": 256,
+  "maximum_visibility_error": 0.007500000000000062,
+  "umbra_abs_x_max": 0.2,
+  "penumbra_abs_x_range": [
+    0.2,
+    1.2
+  ],
+  "passed": true
+}

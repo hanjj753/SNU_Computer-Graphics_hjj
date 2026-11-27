@@ -1,0 +1,218 @@
+{
+  "options": {
+    "width": 480,
+    "height": 360,
+    "spp": 144,
+    "max_depth": 20,
+    "diffuse_bounces": 5,
+    "light_samples": 4,
+    "seed": 2026,
+    "use_bvh": true,
+    "shadows": true,
+    "reflections": true,
+    "refraction": true,
+    "indirect": true,
+    "textures": true,
+    "antialias": true,
+    "hard_shadows": false,
+    "absorption": true,
+    "aperture": null,
+    "focus_distance": null
+  },
+  "threads": 12,
+  "warmup_seconds": 0.4685829000081867,
+  "render_seconds": 22.56915949989343,
+  "elapsed_seconds": 22.570426199992653,
+  "rays": 115235381,
+  "triangle_tests": 981183694,
+  "linear_mean": [
+    0.1952970858459249,
+    0.17498755435080252,
+    0.2024693769356547
+  ],
+  "linear_max": 105.55999999999986,
+  "rays_per_second": 5105878.2672232045,
+  "linear_rmse_from_full": 0.0,
+  "scene": {
+    "triangles": 12196,
+    "bvh_nodes": 7623,
+    "bvh_depth": 19,
+    "bvh_build_seconds": 0.8187687000026926,
+    "scene_load_seconds": 1.6523410000372678,
+    "objects": {
+      "box_front": 1152,
+      "box_left": 1152,
+      "box_back": 1152,
+      "box_right": 1152,
+      "box_bottom": 1152,
+      "box_top": 1152,
+      "plastic_cup": 1344,
+      "Torus_Torus": 1152,
+      "Floor_Cube.001": 12,
+      "Back_Wall_Cube.002": 12,
+      "Left_Wall_Cube.003": 12,
+      "Right_Wall_Cube.004": 12,
+      "Ceiling1_Cube.005": 12,
+      "Ceiling2_Cube.006": 12,
+      "Ceiling3_Cube.007": 12,
+      "Ceiling4_Cube.008": 12,
+      "water": 2688,
+      "ground": 2,
+      "area_light": 2
+    },
+    "materials": [
+      "back",
+      "floor",
+      "ceiling",
+      "red",
+      "green",
+      "mint",
+      "ground",
+      "plastic",
+      "water",
+      "box_front",
+      "box_back",
+      "box_right",
+      "box_left",
+      "box_top",
+      "box_bottom",
+      "area_light"
+    ],
+    "config": {
+      "camera": {
+        "eye": [
+          1.4376,
+          1.4747,
+          5.0614
+        ],
+        "target": [
+          1.3705,
+          1.7685,
+          -1.5
+        ],
+        "up": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fov": 52.6253,
+        "focus_distance": 6.9,
+        "aperture": 0.0
+      },
+      "light": {
+        "center": [
+          1.45,
+          3.002,
+          -1.5
+        ],
+        "width": 0.6,
+        "depth": 0.6,
+        "radiance": [
+          79.17,
+          89.72,
+          105.56
+        ]
+      },
+      "exposure": 2.4,
+      "materials": {
+        "back": {
+          "color": [
+            0.43,
+            0.41,
+            0.44
+          ],
+          "specular": 0.008,
+          "exponent": 24.0
+        },
+        "floor": {
+          "color": [
+            0.65,
+            0.73,
+            0.85
+          ],
+          "specular": 0.01,
+          "exponent": 32.0
+        },
+        "ceiling": {
+          "color": [
+            0.68,
+            0.68,
+            0.68
+          ],
+          "specular": 0.16,
+          "exponent": 24.0
+        },
+        "red": {
+          "color": [
+            0.42,
+            0.018,
+            0.025
+          ],
+          "specular": 0.09,
+          "exponent": 18.0
+        },
+        "green": {
+          "color": [
+            0.008,
+            0.095,
+            0.03
+          ],
+          "specular": 0.09,
+          "exponent": 18.0
+        },
+        "mint": {
+          "color": [
+            0.2,
+            0.73,
+            0.43
+          ],
+          "specular": 0.03,
+          "exponent": 9.0
+        },
+        "ground": {
+          "color": [
+            0.3,
+            0.19,
+            0.1
+          ],
+          "specular": 0.0,
+          "exponent": 16.0
+        },
+        "box": {
+          "color": [
+            0.8,
+            0.8,
+            0.84
+          ],
+          "specular": 0.045,
+          "exponent": 20.0
+        },
+        "plastic": {
+          "color": [
+            0.72,
+            0.74,
+            0.77
+          ],
+          "ior": 1.49,
+          "absorption": [
+            0.1,
+            0.06,
+            0.025
+          ],
+          "diffuse_interface": 0.08
+        },
+        "water": {
+          "ior": 1.333,
+          "absorption": [
+            0.18,
+            0.07,
+            0.035
+          ]
+        }
+      }
+    }
+  },
+  "exposure": 2.4,
+  "tone_mapping": "Reinhard, then exact sRGB transfer",
+  "output": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\comparison\\full.png"
+}

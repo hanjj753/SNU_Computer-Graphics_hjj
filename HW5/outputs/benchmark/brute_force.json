@@ -1,0 +1,38 @@
+{
+  "options": {
+    "width": 128,
+    "height": 96,
+    "spp": 4,
+    "max_depth": 12,
+    "diffuse_bounces": 3,
+    "light_samples": 1,
+    "seed": 2026,
+    "use_bvh": false,
+    "shadows": true,
+    "reflections": true,
+    "refraction": true,
+    "indirect": true,
+    "textures": true,
+    "antialias": true,
+    "hard_shadows": false,
+    "absorption": true,
+    "aperture": null,
+    "focus_distance": null
+  },
+  "threads": 12,
+  "warmup_seconds": 0.0003828999469988048,
+  "render_seconds": 1.6346790999523364,
+  "elapsed_seconds": 1.6348066999926232,
+  "rays": 159997,
+  "triangle_tests": 1951323412,
+  "linear_mean": [
+    0.19391912500403932,
+    0.17500659483616407,
+    0.20267540557479455
+  ],
+  "linear_max": 105.56,
+  "rays_per_second": 97876.7025311972,
+  "exposure": 2.4,
+  "tone_mapping": "Reinhard, then exact sRGB transfer",
+  "output": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\benchmark\\brute_force.png"
+}

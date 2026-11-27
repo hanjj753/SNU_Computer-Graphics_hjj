@@ -1,0 +1,7 @@
+{
+  "model": "models/cornell_scene.obj",
+  "hw2_obj_sha256": "54cb58f7059525c139a6a97934ed0d4c6d35b7435254ac662fd88858fa1d14c7",
+  "identical_sources_verified": ["HW2/models/cornell_scene.obj", "HW4/code/models/cornell_scene.obj", "HW5/assets/models/cornell_scene.obj"],
+  "adaptations": ["closed plastic cup with rim", "closed water with meniscus", "textured beveled box", "area-light emitter and ground"],
+  "runtime_dependency_on_other_homework": false
+}

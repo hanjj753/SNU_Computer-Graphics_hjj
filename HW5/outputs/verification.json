@@ -1,0 +1,79 @@
+{
+  "verified_at_kst": "2026-11-26T02:23:40.819024+09:00",
+  "software_and_files_passed": true,
+  "checks": {
+    "cpu_renderer_without_opengl": {
+      "passed": true,
+      "forbidden_imports": []
+    },
+    "tests": {
+      "passed": true,
+      "run": 16,
+      "failures": 0,
+      "errors": 0,
+      "log": "test_results.txt"
+    },
+    "python_main_entrypoint": {
+      "passed": true,
+      "command": "python main.py render --width 48 --height 36 --spp 4 --max-depth 8",
+      "python": "D:\\anaconda3\\envs\\snu_graphics_hjj\\python.exe",
+      "exit_code": 0,
+      "stdout": "Saved D:\\Workspace\\Computer Graphics\\HW5\\tmp\\verify_rucyuhzx\\entrypoint.png\nRender 0.006s; 31,416 rays; 261,280 triangle tests; warmup 0.179s\n",
+      "stderr": ""
+    },
+    "required_deliverables": {
+      "passed": true,
+      "missing": []
+    },
+    "bvh_same_image": {
+      "passed": true,
+      "max_abs_difference": 0.0,
+      "median_render_seconds": {
+        "bvh": 0.03522670001257211,
+        "brute_force": 1.6487893000012264
+      },
+      "speedup": 46.80510236305948
+    },
+    "feature_comparisons": {
+      "passed": true,
+      "cases": [
+        "aa",
+        "absorption",
+        "dof",
+        "full",
+        "indirect",
+        "reflections",
+        "refraction",
+        "shadows",
+        "textures"
+      ]
+    },
+    "penumbra_integration": {
+      "passed": true,
+      "maximum_visibility_error": 0.007500000000000062
+    },
+    "assignment2_scene": {
+      "passed": true,
+      "sha256": "54cb58f7059525c139a6a97934ed0d4c6d35b7435254ac662fd88858fa1d14c7"
+    },
+    "human_actions": {
+      "demo_day_attendance": "pending user action",
+      "etl_upload": "pending user action"
+    }
+  },
+  "source_sha256": {
+    "main.py": "0c6627bbbe5a5f4534a14424d8699d9e5b1a99345be18c9bff3267669ead2c81",
+    "scene.json": "eef4abf6c5a8c328d96f6079f0c892449417834bb294eddd11d892cc7b535ab1",
+    "code/bvh.py": "b58efa9078298fbd7a788d25a35df68393548662a239cc2f5a514906333b36ef",
+    "code/cli.py": "b8138f1267e56b2a814fb838bf369d30f28410e8b68d70efee5545a8f3956619",
+    "code/cup_geometry.py": "1cdc515fdbde1727185f8110b2d8d62979c641cb0f89d0c78a6c6f1e1f8e3ad7",
+    "code/denoise.py": "2b0d8cd49be9f5395005677047d0d377fc871d703eefcd89933059d8f8dc52cc",
+    "code/experiments.py": "7fae87d6e1523c968b00636442031c6a225d5e4c815f1416c3136fc26d41f048",
+    "code/image_io.py": "7223a95563360561406ad3471c33bbe2ed019b9c1faad8d6bb34f9e6cf33af60",
+    "code/sampling.py": "0713b4ca3dec74e00f47f070da563d671d96848b12a369fe9fd95b1736dc7933",
+    "code/scene.py": "36471c0e5ef0f2f6f7876cc981cdb7f010e8370a0824c1575c58e8895951342e",
+    "code/tracer.py": "181ddd39cc3478d23e6aa6728c0f6ab743dbd88a4456123cdc2f82249216a27c",
+    "code/water_surface.py": "89e2b67451ff78bd34710dce5891bf2684d16b4b72c761396b7ff2eeb59a08a1"
+  },
+  "scope": "Local software and deliverables only; Demo Day participation and ETL upload cannot be verified locally."
+}

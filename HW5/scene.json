@@ -1,0 +1,29 @@
+{
+  "camera": {
+    "eye": [1.4376, 1.4747, 5.0614],
+    "target": [1.3705, 1.7685, -1.5],
+    "up": [0.0, 1.0, 0.0],
+    "fov": 52.6253,
+    "focus_distance": 6.9,
+    "aperture": 0.0
+  },
+  "light": {
+    "center": [1.45, 3.002, -1.5],
+    "width": 0.6,
+    "depth": 0.6,
+    "radiance": [79.17, 89.72, 105.56]
+  },
+  "exposure": 2.4,
+  "materials": {
+    "back": {"color": [0.43, 0.41, 0.44], "specular": 0.008, "exponent": 24.0},
+    "floor": {"color": [0.65, 0.73, 0.85], "specular": 0.01, "exponent": 32.0},
+    "ceiling": {"color": [0.68, 0.68, 0.68], "specular": 0.16, "exponent": 24.0},
+    "red": {"color": [0.42, 0.018, 0.025], "specular": 0.09, "exponent": 18.0},
+    "green": {"color": [0.008, 0.095, 0.03], "specular": 0.09, "exponent": 18.0},
+    "mint": {"color": [0.20, 0.73, 0.43], "specular": 0.03, "exponent": 9.0},
+    "ground": {"color": [0.30, 0.19, 0.10], "specular": 0.0, "exponent": 16.0},
+    "box": {"color": [0.80, 0.80, 0.84], "specular": 0.045, "exponent": 20.0},
+    "plastic": {"color": [0.72, 0.74, 0.77], "ior": 1.49, "absorption": [0.10, 0.06, 0.025], "diffuse_interface": 0.08},
+    "water": {"ior": 1.333, "absorption": [0.18, 0.07, 0.035]}
+  }
+}
