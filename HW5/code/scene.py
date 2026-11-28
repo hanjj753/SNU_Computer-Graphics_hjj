@@ -22,7 +22,8 @@ from water_surface import build_water_volume
 ROOT = Path(__file__).resolve().parent.parent
 
 # materials: albedo RGB, coating Ks, Phong exponent, type, IOR,
-#            absorption RGB, texture ID, emitted radiance RGB, diffuse interface mix.
+#            absorption RGB, texture ID, emitted radiance RGB, diffuse interface mix,
+#            homogeneous scattering coefficient, nominal shell thickness.
 OPAQUE, DIELECTRIC, EMITTER = 0, 1, 2
 
 
@@ -41,7 +42,7 @@ class SceneBuffers(NamedTuple):
     materials: np.ndarray
     texture_pixels: np.ndarray
     texture_info: np.ndarray
-    light: np.ndarray  # center xyz, width, depth, radiance rgb
+    light: np.ndarray  # center xyz, width, depth, peak radiance rgb, directional power
 
 
 @dataclass
@@ -214,6 +215,8 @@ def validate_config(config):
         raise ValueError("camera.focus_distance must be positive and finite")
     vector(light["center"], "light.center")
     vector(light["radiance"], "light.radiance", nonnegative=True)
+    if not math.isfinite(light.get("directional_power", 0)) or light.get("directional_power", 0) < 0:
+        raise ValueError("light.directional_power must be finite and nonnegative")
     for name, value in (("exposure", config["exposure"]), ("light.width", light["width"]), ("light.depth", light["depth"])):
         if not math.isfinite(value) or value <= 0:
             raise ValueError(f"{name} must be positive and finite")
@@ -229,6 +232,8 @@ def validate_config(config):
             raise ValueError(f"{name}.ior must be positive and finite")
         if not math.isfinite(material.get("exponent", 24)) or material.get("exponent", 24) < 0:
             raise ValueError(f"{name}.exponent must be finite and nonnegative")
+        if not math.isfinite(material.get("scattering", 0)) or material.get("scattering", 0) < 0:
+            raise ValueError(f"{name}.scattering must be finite and nonnegative")
 
 
 def load_scene(config_path=None):
@@ -246,11 +251,12 @@ def load_scene(config_path=None):
     def material(name, kind=OPAQUE, texture=None):
         nonlocal texture_offset
         settings = config_mats[name if not name.startswith("box_") else "box"]
-        data = np.zeros(15, dtype=np.float64)
+        data = np.zeros(17, dtype=np.float64)
         data[:3] = settings.get("color", [1, 1, 1])
         data[3:7] = settings.get("specular", 0), settings.get("exponent", 24), kind, settings.get("ior", 1.0)
         data[7:10] = settings.get("absorption", [0, 0, 0])
         data[14] = settings.get("diffuse_interface", 0.0)
+        data[15] = settings.get("scattering", 0.0)
         data[10] = -1
         if texture is not None:
             path = ROOT / "assets" / "textures" / texture
@@ -290,6 +296,8 @@ def load_scene(config_path=None):
 
     cup_source = next(m for m in source if m.material == "Cup")
     cup = build_cup_mesh(cup_source.positions.reshape(-1).tolist())
+    materials[ids["plastic"]][16] = cup.wall_thickness(
+        .5 * (cup.inner_profile[0][0] + cup.inner_profile[1][0]))
     for mesh in source:
         if mesh.name == "Pie_Cube":
             for face, (p, n, uv) in _box_faces(mesh).items():
@@ -317,7 +325,7 @@ def load_scene(config_path=None):
     center = np.asarray(light["center"])
     w, d = light["width"] / 2, light["depth"] / 2
     p = center + np.array([[-w, 0, -d], [w, 0, -d], [w, 0, d], [-w, 0, d]])
-    data = np.zeros(15)
+    data = np.zeros(17)
     data[5], data[6], data[10], data[11:14] = EMITTER, 1.0, -1, light["radiance"]
     light_id = len(materials)
     materials.append(data)
@@ -338,7 +346,7 @@ def load_scene(config_path=None):
                           np.asarray(material_ids, dtype=np.int32), bvh.minimum, bvh.maximum, bvh.nodes, bvh.indices,
                           np.asarray(materials), np.concatenate(texture_pixels).astype(np.float32),
                           np.asarray(texture_info, dtype=np.int64),
-                          np.asarray([*center, light["width"], light["depth"], *light["radiance"]]))
+                          np.asarray([*center, light["width"], light["depth"], *light["radiance"], light.get("directional_power", 0)]))
     stats = {"triangles": len(p), "bvh_nodes": len(bvh.nodes), "bvh_depth": bvh.depth,
              "bvh_build_seconds": bvh_seconds, "scene_load_seconds": time.perf_counter() - started,
              "objects": object_counts, "materials": material_names, "config": config}

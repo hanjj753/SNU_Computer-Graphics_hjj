@@ -29,6 +29,6 @@
 
 ## 정확도와 검증 범위
 
-유전체를 통과하는 shadow connection은 직선 경로의 Fresnel·흡수 근사다. 광원까지 이어지는 굴절 caustic 경로를 푸는 적분기는 아니다. 컵의 흐림은 표면 Lambert 혼합이며 물리적인 부피 산란은 아니다. 재질·흡수 계수는 사진 보정값이다. 저 spp 간접광에는 Monte Carlo 노이즈가 있고 필터 사본은 편향된 후처리다. 이런 근사를 보고서에서 공개하며, 명세가 요구하지 않은 분산·motion blur·정확한 caustics까지 구현했다고 주장하지 않는다.
+유전체를 통과하는 shadow connection은 직선 경로의 Fresnel·흡수·산란 소광 근사다. 광원까지 이어지는 굴절 caustic 경로를 푸는 적분기는 아니다. 최신 컵 재질은 균질·등방성 부피 산란과 표면 Lambert 혼합을 사용한다. 산란점의 직접광 연결에는 수직 입사 Fresnel과 얇은 셸의 광학 길이 근사가 있으므로 편향 없는 완전한 부피 적분기는 아니다. 재질·흡수·산란 계수와 광원 배광은 사진 보정값이다. 저 spp 간접광에는 Monte Carlo 노이즈가 있고 필터 사본은 편향된 후처리다. 분산·motion blur·정확한 caustics는 구현하지 않았다. 기존 보고서·ZIP의 영상과 설명은 이전 재질 버전이며, 최신 보정 결과와 한계는 `README.md` 및 `outputs/cornell_material_match.json`에 기록한다.
 
 `outputs/verification.json`이 소프트웨어/파일 검사의 실제 결과를 기록한다. Demo Day 참여 및 ETL 업로드는 그 안에서도 사람의 후속 작업으로 남긴다.

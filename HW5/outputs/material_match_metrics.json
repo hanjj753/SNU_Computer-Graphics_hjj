@@ -1,0 +1,306 @@
+{
+  "measurement": {
+    "resolution": [
+      480,
+      360
+    ],
+    "color_space": "display sRGB, 0..255",
+    "mask": "Primary-hit material IDs, eroded by 3 pixels on each edge; same mask used for photo/before/after. No photometric registration or exposure adjustment.",
+    "caution": "Approximate color/brightness comparison; not a perceptual quality or denoising score. Source images have different resolutions and spp.",
+    "photo": "HW5\\pictures\\Cornell Box.jpg",
+    "before": {
+      "path": "HW5\\outputs\\cornell_supersampling_2048.png",
+      "resolution": [
+        960,
+        720
+      ],
+      "spp": 2048,
+      "denoised": false
+    },
+    "after": {
+      "path": "HW5\\outputs\\cornell_material_match.png",
+      "resolution": [
+        640,
+        480
+      ],
+      "spp": 256,
+      "denoised": false,
+      "render_seconds": 78.31079249980394
+    }
+  },
+  "regions": {
+    "plastic": {
+      "pixel_count": 964,
+      "photo_mean_rgb": [
+        184.124,
+        177.518,
+        187.594
+      ],
+      "before": {
+        "mean_rgb": [
+          160.358,
+          153.107,
+          166.893
+        ],
+        "rgb_rmse": 25.864
+      },
+      "after": {
+        "mean_rgb": [
+          183.075,
+          176.741,
+          187.357
+        ],
+        "rgb_rmse": 11.451
+      }
+    },
+    "red": {
+      "pixel_count": 5986,
+      "photo_mean_rgb": [
+        171.705,
+        80.685,
+        91.406
+      ],
+      "before": {
+        "mean_rgb": [
+          176.854,
+          61.88,
+          75.224
+        ],
+        "rgb_rmse": 24.125
+      },
+      "after": {
+        "mean_rgb": [
+          173.583,
+          80.653,
+          92.654
+        ],
+        "rgb_rmse": 10.62
+      }
+    },
+    "green": {
+      "pixel_count": 5310,
+      "photo_mean_rgb": [
+        38.678,
+        61.311,
+        48.636
+      ],
+      "before": {
+        "mean_rgb": [
+          28.838,
+          52.868,
+          37.846
+        ],
+        "rgb_rmse": 21.178
+      },
+      "after": {
+        "mean_rgb": [
+          40.417,
+          62.721,
+          51.322
+        ],
+        "rgb_rmse": 15.863
+      }
+    },
+    "back": {
+      "pixel_count": 4611,
+      "photo_mean_rgb": [
+        164.659,
+        155.195,
+        168.412
+      ],
+      "before": {
+        "mean_rgb": [
+          175.85,
+          163.519,
+          174.398
+        ],
+        "rgb_rmse": 21.23
+      },
+      "after": {
+        "mean_rgb": [
+          168.133,
+          154.547,
+          168.502
+        ],
+        "rgb_rmse": 9.367
+      }
+    },
+    "ceiling": {
+      "pixel_count": 5466,
+      "photo_mean_rgb": [
+        160.229,
+        129.713,
+        134.954
+      ],
+      "before": {
+        "mean_rgb": [
+          172.263,
+          135.34,
+          140.011
+        ],
+        "rgb_rmse": 20.412
+      },
+      "after": {
+        "mean_rgb": [
+          159.373,
+          131.177,
+          137.719
+        ],
+        "rgb_rmse": 20.28
+      }
+    }
+  },
+  "validation": {
+    "unittest": "22 tests passed; current-default BVH/render reproducibility test also passed after applying calibration.",
+    "environment": "snu_graphics_hjj",
+    "preserved_settings": [
+      "camera",
+      "exposure",
+      "floor material",
+      "wood material",
+      "mint material",
+      "box material",
+      "water material",
+      "light position/dimensions/peak radiance"
+    ],
+    "unchanged_source_sha256": {
+      "denoise.py": "2b0d8cd49be9f5395005677047d0d377fc871d703eefcd89933059d8f8dc52cc",
+      "cup_geometry.py": "1cdc515fdbde1727185f8110b2d8d62979c641cb0f89d0c78a6c6f1e1f8e3ad7"
+    }
+  },
+  "config": {
+    "camera": {
+      "eye": [
+        1.4376,
+        1.4747,
+        5.0614
+      ],
+      "target": [
+        1.3705,
+        1.7685,
+        -1.5
+      ],
+      "up": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 52.6253,
+      "focus_distance": 6.9,
+      "aperture": 0.0
+    },
+    "light": {
+      "center": [
+        1.45,
+        3.002,
+        -1.5
+      ],
+      "width": 0.6,
+      "depth": 0.6,
+      "radiance": [
+        79.17,
+        89.72,
+        105.56
+      ],
+      "directional_power": 1.45
+    },
+    "exposure": 2.4,
+    "materials": {
+      "back": {
+        "color": [
+          0.625,
+          0.72,
+          0.82
+        ],
+        "specular": 0.035,
+        "exponent": 32.0
+      },
+      "floor": {
+        "color": [
+          0.65,
+          0.73,
+          0.85
+        ],
+        "specular": 0.01,
+        "exponent": 32.0
+      },
+      "ceiling": {
+        "color": [
+          0.7,
+          0.83,
+          0.85
+        ],
+        "specular": 0.14,
+        "exponent": 28.0
+      },
+      "red": {
+        "color": [
+          0.693,
+          0.0704,
+          0.0825
+        ],
+        "specular": 0.16,
+        "exponent": 32.0
+      },
+      "green": {
+        "color": [
+          0.057,
+          0.31,
+          0.15
+        ],
+        "specular": 0.18,
+        "exponent": 48.0
+      },
+      "mint": {
+        "color": [
+          0.2,
+          0.73,
+          0.43
+        ],
+        "specular": 0.03,
+        "exponent": 9.0
+      },
+      "ground": {
+        "color": [
+          0.3,
+          0.19,
+          0.1
+        ],
+        "specular": 0.0,
+        "exponent": 16.0
+      },
+      "box": {
+        "color": [
+          0.8,
+          0.8,
+          0.84
+        ],
+        "specular": 0.045,
+        "exponent": 20.0
+      },
+      "plastic": {
+        "color": [
+          0.85,
+          0.86,
+          0.88
+        ],
+        "ior": 1.49,
+        "absorption": [
+          0.1,
+          2.3,
+          3.0
+        ],
+        "diffuse_interface": 0.08,
+        "scattering": 14.0
+      },
+      "water": {
+        "ior": 1.333,
+        "absorption": [
+          0.18,
+          0.07,
+          0.035
+        ]
+      }
+    }
+  }
+}

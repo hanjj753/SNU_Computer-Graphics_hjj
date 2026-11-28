@@ -1,0 +1,230 @@
+{
+  "options": {
+    "width": 640,
+    "height": 480,
+    "spp": 256,
+    "max_depth": 24,
+    "diffuse_bounces": 6,
+    "light_samples": 4,
+    "seed": 2026,
+    "use_bvh": true,
+    "shadows": true,
+    "reflections": true,
+    "refraction": true,
+    "indirect": true,
+    "textures": true,
+    "antialias": true,
+    "hard_shadows": false,
+    "absorption": true,
+    "aperture": null,
+    "focus_distance": null
+  },
+  "threads": 12,
+  "warmup_seconds": 0.17164850002154708,
+  "render_seconds": 79.71980469999835,
+  "elapsed_seconds": 79.74607320001815,
+  "rays": 381390737,
+  "triangle_tests": 3431559705,
+  "linear_mean": [
+    0.08372129468435976,
+    0.05667594403965519,
+    0.06566583178461105
+  ],
+  "linear_max": 12.915737701109501,
+  "rays_per_second": 4784140.383123742,
+  "scene": {
+    "triangles": 12196,
+    "bvh_nodes": 7623,
+    "bvh_depth": 19,
+    "bvh_build_seconds": 0.7978712000185624,
+    "scene_load_seconds": 1.6369757000356913,
+    "objects": {
+      "box_front": 1152,
+      "box_left": 1152,
+      "box_back": 1152,
+      "box_right": 1152,
+      "box_bottom": 1152,
+      "box_top": 1152,
+      "plastic_cup": 1344,
+      "Torus_Torus": 1152,
+      "Floor_Cube.001": 12,
+      "Back_Wall_Cube.002": 12,
+      "Left_Wall_Cube.003": 12,
+      "Right_Wall_Cube.004": 12,
+      "Ceiling1_Cube.005": 12,
+      "Ceiling2_Cube.006": 12,
+      "Ceiling3_Cube.007": 12,
+      "Ceiling4_Cube.008": 12,
+      "water": 2688,
+      "ground": 2,
+      "area_light": 2
+    },
+    "materials": [
+      "back",
+      "floor",
+      "ceiling",
+      "red",
+      "green",
+      "mint",
+      "ground",
+      "plastic",
+      "water",
+      "box_front",
+      "box_back",
+      "box_right",
+      "box_left",
+      "box_top",
+      "box_bottom",
+      "area_light"
+    ],
+    "config": {
+      "camera": {
+        "eye": [
+          1.4376,
+          1.4747,
+          5.0614
+        ],
+        "target": [
+          1.3705,
+          1.7685,
+          -1.5
+        ],
+        "up": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "fov": 52.6253,
+        "focus_distance": 6.9,
+        "aperture": 0.0
+      },
+      "light": {
+        "center": [
+          1.45,
+          3.002,
+          -1.5
+        ],
+        "width": 0.6,
+        "depth": 0.6,
+        "radiance": [
+          79.17,
+          89.72,
+          105.56
+        ],
+        "directional_power": 1.45
+      },
+      "exposure": 2.4,
+      "materials": {
+        "back": {
+          "color": [
+            0.625,
+            0.72,
+            0.82
+          ],
+          "specular": 0.035,
+          "exponent": 32.0
+        },
+        "floor": {
+          "color": [
+            0.65,
+            0.73,
+            0.85
+          ],
+          "specular": 0.01,
+          "exponent": 32.0
+        },
+        "ceiling": {
+          "color": [
+            0.7,
+            0.83,
+            0.85
+          ],
+          "specular": 0.14,
+          "exponent": 28.0
+        },
+        "red": {
+          "color": [
+            0.693,
+            0.0704,
+            0.0825
+          ],
+          "specular": 0.16,
+          "exponent": 32.0
+        },
+        "green": {
+          "color": [
+            0.057,
+            0.31,
+            0.15
+          ],
+          "specular": 0.18,
+          "exponent": 48.0
+        },
+        "mint": {
+          "color": [
+            0.2,
+            0.73,
+            0.43
+          ],
+          "specular": 0.03,
+          "exponent": 9.0
+        },
+        "ground": {
+          "color": [
+            0.3,
+            0.19,
+            0.1
+          ],
+          "specular": 0.0,
+          "exponent": 16.0
+        },
+        "box": {
+          "color": [
+            0.8,
+            0.8,
+            0.84
+          ],
+          "specular": 0.045,
+          "exponent": 20.0
+        },
+        "plastic": {
+          "color": [
+            0.85,
+            0.86,
+            0.88
+          ],
+          "ior": 1.49,
+          "absorption": [
+            0.1,
+            2.3,
+            3.0
+          ],
+          "diffuse_interface": 0.08,
+          "scattering": 14.0
+        },
+        "water": {
+          "ior": 1.333,
+          "absorption": [
+            0.18,
+            0.07,
+            0.035
+          ]
+        }
+      }
+    }
+  },
+  "exposure": 2.4,
+  "denoising": {
+    "method": "albedo-demodulated, normal/depth/material-guided a trous",
+    "iterations": 2,
+    "strength": 0.8,
+    "seconds_including_jit": 0.26285890000872314,
+    "biased_filter": true,
+    "raw_render_retained": true
+  },
+  "source": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_material_match.png",
+  "source_sha256": "9d01f4d6d28c0ac71853df0ca18454fe78b001dc2d20c49501d3a4a85c4f6f34",
+  "exact_raw_pixel_match": true,
+  "tone_mapping": "Reinhard, then exact sRGB transfer",
+  "output": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_material_match_denoised_soft.png"
+}

@@ -12,9 +12,11 @@ import numpy as np
 from numba import get_num_threads, njit, prange
 
 from bvh import intersect
-from sampling import (EPSILON, PI, cosine_direction, dielectric, dot,
+from sampling import (EPSILON, PI, cosine_direction, dielectric, dot, emitter_weight,
                       normalize, phong_direction, power_heuristic,
                       radical_inverse, random_float, reflect, sample_seed)
+from volume import (ISOTROPIC_PDF, free_flight, isotropic_direction,
+                    scattering_coefficient, shell_connection_distance)
 
 
 @dataclass
@@ -109,7 +111,8 @@ def update_media(media, size, material_id, entering, remove):
 
 
 @njit(cache=True)
-def shadow_transmittance(origin, direction, distance, scene, flags, initial_media, initial_size):
+def shadow_transmittance(origin, direction, distance, scene, flags, initial_media, initial_size,
+                         volume_connection=False):
     """Colored visibility along a straight light connection.
 
     Fresnel and Beer–Lambert account for thin plastic and water. Refractive
@@ -124,6 +127,11 @@ def shadow_transmittance(origin, direction, distance, scene, flags, initial_medi
         tests += count
         rays += 1
         segment = min(t, remaining)
+        if size > 0 and volume_connection and hit >= 0 and scattering_coefficient(scene.materials[media[size - 1]]) > 0:
+            segment = shell_connection_distance(scene.materials[media[size - 1]], segment,
+                                                dot(direction, scene.geometric_normals[hit]))
+        if size > 0:
+            trans *= math.exp(-scattering_coefficient(scene.materials[media[size - 1]]) * segment)
         if size > 0 and flags[8]:
             for c in range(3):
                 trans[c] *= math.exp(-scene.materials[media[size - 1], 7 + c] * segment)
@@ -136,12 +144,24 @@ def shadow_transmittance(origin, direction, distance, scene, flags, initial_medi
         entering = dot(direction, gn) < 0
         n = (gn[0], gn[1], gn[2]) if entering else (-gn[0], -gn[1], -gn[2])
         eta_i, eta_t, remove = medium_transition(media, size, mid, entering, scene.materials)
-        fresnel, _, tir = dielectric(direction, n, eta_i, eta_t)
+        if volume_connection and scattering_coefficient(scene.materials[mid]) > 0.0:
+            # Direct-light connections through cloudy plastic use normal-incidence
+            # Fresnel. This straight-connection approximation omits refractive
+            # focusing and avoids a false macro-surface TIR cutoff. Camera paths
+            # still refract at every actual plastic boundary.
+            fresnel = ((eta_i - eta_t) / (eta_i + eta_t)) ** 2
+            tir = False
+        else:
+            fresnel, _, tir = dielectric(direction, n, eta_i, eta_t)
         if tir:
             return np.zeros(3), tests, rays
         if not flags[2]:
             fresnel = 0.0
         trans *= (1.0 - fresnel) * (1.0 - scene.materials[mid, 14])
+        if volume_connection:
+            # Radiance crossing out of a denser medium grows by eta^2; this
+            # cancels the camera path's entrance factor. It is not power gain.
+            trans *= (eta_i / eta_t) ** 2
         size = update_media(media, size, mid, entering, remove)
         # Advance along the same light connection, preserving its exact endpoint.
         advance = t + EPSILON * 4
@@ -178,6 +198,39 @@ def direct_brdf(albedo, ks, exponent, reflected_cosine, mis_weight, diffuse_cont
 
 
 @njit(cache=True)
+def volume_direct(point, scene, flags, media, media_size, light_samples, can_continue, state):
+    result = np.zeros(3)
+    triangle_tests, rays = 0, 0
+    side = int(math.sqrt(light_samples))
+    for sample in range(light_samples):
+        state, a = random_float(state)
+        state, b = random_float(state)
+        if flags[7]:
+            a, b = .5, .5
+        elif side * side == light_samples:
+            a, b = (sample % side + a) / side, (sample // side + b) / side
+        wi = (scene.light[0] + (a - .5) * scene.light[3] - point[0],
+              scene.light[1] - point[1],
+              scene.light[2] + (b - .5) * scene.light[4] - point[2])
+        distance2 = dot(wi, wi)
+        distance = math.sqrt(distance2)
+        wi = (wi[0] / distance, wi[1] / distance, wi[2] / distance)
+        if wi[1] <= 0:
+            continue
+        visibility = np.ones(3)
+        if flags[1]:
+            visibility, tests, count = shadow_transmittance(point, wi, distance - EPSILON * 8,
+                                                            scene, flags, media, media_size, True)
+            triangle_tests += tests
+            rays += count
+        light_pdf = distance2 / (wi[1] * scene.light[3] * scene.light[4])
+        weight = power_heuristic(light_samples * light_pdf, ISOTROPIC_PDF) if can_continue and not flags[7] else 1.
+        for c in range(3):
+            result[c] += ISOTROPIC_PDF * scene.light[5 + c] * emitter_weight(scene.light, wi[1]) * visibility[c] * weight / (light_pdf * light_samples)
+    return result, state, triangle_tests, rays
+
+
+@njit(cache=True)
 def trace_path(origin, direction, scene, flags, max_depth, diffuse_limit, light_samples, state):
     radiance = np.zeros(3, dtype=np.float64)
     throughput = np.ones(3, dtype=np.float64)
@@ -192,6 +245,40 @@ def trace_path(origin, direction, scene, flags, max_depth, diffuse_limit, light_
         triangle_tests += tests
         if hit < 0:
             break  # black environment, matching the photographed enclosure
+        if media_size > 0:
+            current = scene.materials[media[media_size - 1]]
+            sigma_s = scattering_coefficient(current)
+            if sigma_s > 0:
+                state, uniform = random_float(state)
+                distance = free_flight(sigma_s, uniform)
+                if distance < t:
+                    if flags[8]:
+                        for c in range(3):
+                            throughput[c] *= math.exp(-current[7 + c] * distance)
+                    point = (origin[0] + direction[0] * distance,
+                             origin[1] + direction[1] * distance,
+                             origin[2] + direction[2] * distance)
+                    can_continue = flags[4] != 0 and diffuse_depth < diffuse_limit and depth + 1 < max_depth
+                    direct, state, tests, rays = volume_direct(point, scene, flags, media, media_size,
+                                                               light_samples, can_continue, state)
+                    radiance += throughput * direct
+                    triangle_tests += tests
+                    ray_count += rays
+                    if not can_continue:
+                        break
+                    state, a = random_float(state)
+                    state, b = random_float(state)
+                    direction = isotropic_direction(a, b)
+                    origin = point
+                    diffuse_depth += 1
+                    previous_delta, previous_pdf, previous_samples = False, ISOTROPIC_PDF, light_samples
+                    if depth >= 4:
+                        survival = min(.95, max(.05, max(throughput[0], throughput[1], throughput[2]) * eta_scale))
+                        state, coin = random_float(state)
+                        if coin > survival:
+                            break
+                        throughput /= survival
+                    continue
         if media_size > 0 and flags[8]:
             for c in range(3):
                 throughput[c] *= math.exp(-scene.materials[media[media_size - 1], 7 + c] * t)
@@ -221,13 +308,13 @@ def trace_path(origin, direction, scene, flags, max_depth, diffuse_limit, light_
                     if flags[7]:
                         weight = 0.0  # center-light ablation already estimates this term
                 for c in range(3):
-                    radiance[c] += throughput[c] * mat[11 + c] * weight
+                    radiance[c] += throughput[c] * mat[11 + c] * emitter_weight(scene.light, -dot(direction, gn)) * weight
             break
 
         diffuse_interface = False
         if kind == 1 and flags[3]:
-            # A small Lambert reflection mixture models the observed cloudy cup.
-            # It is an explicit surface model, not bulk multiple scattering.
+            # A small matte interface component supplements the separately
+            # sampled bulk scattering; this branch only reflects at the boundary.
             state, mixture_coin = random_float(state)
             diffuse_interface = mixture_coin < mat[14]
         if kind == 1 and flags[3] and not diffuse_interface:
@@ -308,7 +395,7 @@ def trace_path(origin, direction, scene, flags, max_depth, diffuse_limit, light_
             spec_cos = max(0.0, dot(reflected, wi))
             for c in range(3):
                 brdf = direct_brdf(albedo[c], ks, exponent, spec_cos, weight, can_diffuse)
-                radiance[c] += throughput[c] * brdf * scene.light[5 + c] * visibility[c] * cosine / (light_pdf * direct_samples)
+                radiance[c] += throughput[c] * brdf * scene.light[5 + c] * emitter_weight(scene.light, light_cosine) * visibility[c] * cosine / (light_pdf * direct_samples)
         if not can_continue:
             break
         state, coin = random_float(state)

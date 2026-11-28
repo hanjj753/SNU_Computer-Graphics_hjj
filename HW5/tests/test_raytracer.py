@@ -17,6 +17,7 @@ from sampling import dielectric, normalize, sample_seed
 from scene import load_scene
 from tracer import (RenderOptions, camera_buffer, camera_ray, medium_transition,
                     render, shadow_transmittance, texture_color, trace_path, update_media)
+from volume import free_flight, isotropic_direction, shell_connection_distance
 
 
 def diagnostic_scene(base, quads, materials, light=None):
@@ -92,6 +93,25 @@ class OpticsTests(unittest.TestCase):
     def test_display_transfer(self):
         pixels = np.asarray(display_image(np.array([[[0., 1., 1e20]]]), exposure=1.))
         np.testing.assert_array_equal(pixels, [[[0, 188, 255]]])
+
+    def test_free_flight_obeys_beer_extinction(self):
+        distances = np.array([free_flight(120., (i + .5) / 8192) for i in range(8192)])
+        self.assertAlmostEqual(float(np.mean(distances > .01)), np.exp(-1.2), delta=.0002)
+        self.assertEqual(free_flight(0., .5), 1e30)
+
+    def test_isotropic_phase_is_normalized_and_unbiased_in_direction(self):
+        directions = np.array([isotropic_direction((i + .5) / 4096, (i * .61803398875) % 1)
+                               for i in range(4096)])
+        np.testing.assert_allclose(np.linalg.norm(directions, axis=1), 1., atol=1e-12)
+        np.testing.assert_allclose(directions.mean(axis=0), 0., atol=.003)
+        np.testing.assert_allclose((directions ** 2).mean(axis=0), 1 / 3, atol=.003)
+
+    def test_thin_shell_light_connection_has_finite_refracted_optical_length(self):
+        material = np.zeros(17)
+        material[6], material[16] = 1.5, .005
+        self.assertAlmostEqual(shell_connection_distance(material, .005, 1.), .005)
+        length = shell_connection_distance(material, .1, .05)
+        self.assertTrue(.005 < length < .007)
 
     def test_denoising_reduces_noise_without_crossing_material_edge(self):
         target = np.full((8, 12, 3), .2)
@@ -201,6 +221,50 @@ class SceneTests(unittest.TestCase):
         disabled, _, _ = trace_path((0., 1., 0.), (0., -1., 0.), scene, flags,
                                     8, 0, 1, np.uint32(13579))
         np.testing.assert_array_equal(disabled, 0.)
+
+    def test_scattering_medium_extinguishes_unscattered_shadow_connections(self):
+        materials = np.zeros((1, 16))
+        materials[0, 5:7], materials[0, 10], materials[0, 15] = [1., 1.], -1., 4.
+        materials[0, 7:10] = [.2, .3, .4]
+        scene = diagnostic_scene(self.scene, [(horizontal_quad(0, 10, True), 0),
+                                             (horizontal_quad(-.2, 10, False), 0)], materials)
+        flags = np.array([1, 1, 1, 1, 1, 1, 0, 0, 1], dtype=np.int64)
+        trans, _, _ = shadow_transmittance((0., 1., 0.), (0., -1., 0.), 3., scene, flags,
+                                           np.empty(68, dtype=np.int32), 0)
+        np.testing.assert_allclose(trans, np.exp(-.2 * np.array([4.2, 4.3, 4.4])), atol=.00003)
+
+    def test_volume_scattering_receives_light_without_an_emissive_material(self):
+        materials = np.zeros((2, 16))
+        materials[:, 6], materials[:, 10] = 1., -1.
+        materials[0, 5:7], materials[0, 15] = [1., 1.], 20.
+        materials[1, 5], materials[1, 11:14] = 2., [2., 2., 2.]
+        scene = diagnostic_scene(self.scene, [(horizontal_quad(0, 10, True), 0),
+                                             (horizontal_quad(-.2, 10, False), 0),
+                                             (horizontal_quad(2, 2, False), 1)], materials,
+                                 np.array([0., 2., 0., 4., 4., 2., 2., 2.]))
+        flags = np.array([1, 1, 1, 1, 0, 1, 0, 0, 1], dtype=np.int64)
+        total = 0.
+        for sample in range(64):
+            color, _, _ = trace_path((0., 1., 0.), (0., -1., 0.), scene, flags,
+                                     8, 0, 4, sample_seed(0, sample, 2026))
+            total += color[0]
+        self.assertGreater(total / 64, .01)
+        materials[0, 15] = 0.
+        clear, _, _ = trace_path((0., 1., 0.), (0., -1., 0.), scene, flags,
+                                 8, 0, 4, sample_seed(0, 0, 2026))
+        np.testing.assert_array_equal(clear, 0.)
+
+    def test_volume_light_connection_cancels_camera_ior_radiance_factor(self):
+        materials = np.zeros((1, 16))
+        materials[0, 5:7], materials[0, 10], materials[0, 15] = [1., 1.5], -1., 1e-12
+        scene = diagnostic_scene(self.scene, [(horizontal_quad(0, 10, True), 0),
+                                             (horizontal_quad(-.2, 10, False), 0)], materials)
+        flags = np.array([1, 1, 1, 1, 0, 1, 0, 0, 1], dtype=np.int64)
+        stack = np.array([0] + [0] * 67, dtype=np.int32)
+        value, _, _ = shadow_transmittance((0., -.1, 0.), (0., 1., 0.), 2., scene, flags,
+                                           stack, 1, True)
+        # Camera entry is 1/eta^2; light connection exit is eta^2*(1-F).
+        np.testing.assert_allclose(value / 1.5 ** 2, .96, atol=1e-10)
 
     def test_area_light_visibility_has_umbra_penumbra_and_lit_region(self):
         materials = np.zeros((1, 15))

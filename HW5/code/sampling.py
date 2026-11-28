@@ -109,6 +109,13 @@ def power_heuristic(a, b):
     return a * a / max(1e-30, a * a + b * b)
 
 
+@njit(cache=True, inline="always")
+def emitter_weight(light, cosine):
+    """Peak-radiance cosine-power emission; old 8-value lights are Lambertian."""
+    power = light[8] if len(light) > 8 else 0.0
+    return max(0.0, cosine) ** power
+
+
 @njit(cache=True)
 def radical_inverse(value):
     result, factor = 0.0, 0.5

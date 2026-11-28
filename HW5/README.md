@@ -20,6 +20,13 @@ python main.py
 
 ## 생성한 결과
 
+- `outputs/cornell_material_match.png`: 컵의 부피 산란과 벽 색상·광원 배광을 보정한 현재 장면. 640×480, 256 spp 원본이며 denoising을 적용하지 않았다.
+- `outputs/cornell_material_match_denoised.png`, `material_match_denoising_comparison.png`: 같은 256 spp 영상에 기존 3단계 denoising을 적용한 사본과 사진/원본/필터 사본 비교. 필터용 선형 RGB·분산을 동일 설정과 seed로 재생성하고 기존 원본과 픽셀 일치를 확인했다.
+- `outputs/cornell_material_match_denoised_soft.png`: 256 spp 원본에 기본 2단계·강도 0.8의 약한 denoising을 적용한 사본. 필터 결과 80%와 원본 20%를 선형 RGB에서 혼합해 작은 수면 경계와 하이라이트를 남긴다.
+- `outputs/cornell_material_match_ss2048.png`: 같은 장면·해상도에서 2048 spp로 렌더링한 원본. denoising을 적용하지 않는다. 비교는 `outputs/material_match_quality_comparison.png`에 저장한다.
+- `outputs/material_match_denoising_strength.png`: 사진/이전의 강한 필터/약한 필터 및 컵 확대 비교. 이전 결과를 보존하기 위해 이번 약한 사본은 `_denoised_soft.png`에 따로 저장했다. CLI의 기본 필터 출력 이름은 계속 `*_denoised.png`다.
+- `outputs/photo_vs_material_match.png`, `material_match_details.png`: 사진/현재 결과 및 사진/보정 전/보정 후 확대 비교. 보정 전은 기존 2048 spp 영상이다.
+- `outputs/material_match_metrics.json`: 동일한 재질 영역에서 측정한 사진과의 RGB 차이. 구도가 완전히 정합된 품질 점수는 아니다.
 - `outputs/cornell.png`: 기본 최종 설정으로 렌더링한 원본. 정확한 해상도·spp·시간은 `cornell.json`에 기록한다.
 - `outputs/cornell_denoised.png`: 원본에서 guide 기반 노이즈를 줄인 사본.
 - `outputs/reference.png`: 실물 사진 / HW4 / HW5 필터 사본 비교.
@@ -29,6 +36,18 @@ python main.py
 - `outputs/benchmark/timings.json`, `timing.png`: 실제 BVH 성능 측정.
 
 128×96, 4 spp, 3회 교대 실행의 중앙값과 두 선형 RGB 영상의 차이는 `outputs/benchmark/timings.json`을 참조한다. JIT·구축·저장 시간을 제외한 값과 BVH 구축 비용을 구분한다. 검증 결과는 `outputs/verification.json`, 항목별 요구사항 대조는 `REQUIREMENTS.md`에 기록한다.
+
+`cornell_material_match` 이외의 기존 출력·보고서·제출 ZIP은 앞선 재질 설정으로 생성한 기록이다. 현재 기본 설정은 `scene.json`이며 `python main.py`에도 바로 적용된다. 현재 보정 결과를 다시 만들려면 다음을 실행한다.
+
+```powershell
+python main.py render --width 640 --height 480 --spp 256 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_material_match.png
+
+# 약한 denoising: 필터 80% + 원본 20%, 작은 커널 두 단계
+python main.py render --width 640 --height 480 --spp 256 --max-depth 24 --diffuse-bounces 6 --denoise --denoise-strength 0.8 --denoise-iterations 2 --output outputs/cornell_material_match.png
+
+# denoising 없이 카메라·광원·경로 샘플만 증가
+python main.py render --width 640 --height 480 --spp 2048 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_material_match_ss2048.png
+```
 
 ## 렌더링 옵션
 
@@ -61,6 +80,8 @@ python main.py render --preset draft --aperture 0.045 --focus-distance 6.9 --out
 | `--checkpoint`, `--pass-spp` | 일정 spp마다 `*_progress.png` 갱신. 중단돼도 마지막 미리보기가 남는다. |
 | `--save-linear` | PNG/JSON 외에 tone mapping 전 RGB `.npy` 저장 |
 | `--denoise` | raw 결과를 보존하고 `*_denoised.png`와 JSON/선택적 NPY를 추가 저장 |
+| `--denoise-strength` | 필터 혼합 비율 0~1. 기본 0.8, 0이면 원본, 1이면 필터 결과 전부. `--denoise`와 함께 사용. |
+| `--denoise-iterations` | 필터 단계 수 1~5. 기본 2. 이전의 강한 설정은 `--denoise-strength 1 --denoise-iterations 3`. |
 
 `--no-shadows`, `--hard-shadows`, `--no-reflections`, `--no-refraction`, `--no-indirect`, `--no-textures`, `--no-aa`, `--no-absorption`, `--no-bvh`로 효과를 끌 수 있다. `--no-refraction`에서는 컵과 물을 회색 불투명 재질로 바꿔 굴절 유무를 드러낸다. `--no-aa`는 광원·반사 샘플 수를 유지하면서 카메라 광선을 픽셀 중앙에 고정한다.
 
@@ -79,9 +100,9 @@ python main.py render --preset draft --aperture 0.045 --focus-distance 6.9 --out
 
 재귀 rendering equation은 Python 함수 호출 대신 경로 상태를 갱신하는 루프로 계산한다. 광택 BRDF와 cosine 난반사를 확률적으로 샘플링하고, 면 광원 샘플과 BSDF 샘플을 power-heuristic MIS로 결합한다. 깊이 4 이후에는 Russian roulette로 경로를 끝낸다. 유전체에서는 Fresnel 비율에 따라 반사 또는 굴절 경로를 선택하며, 전반사는 항상 반사한다. 매질 진입/이탈과 `eta²` radiance 보정은 실제 경계를 통과할 때 처리한다.
 
-컵은 내벽·외벽·바닥·입구 띠가 이어진 속이 빈 닫힌 메시다. 물도 수면의 작은 meniscus, 옆면, 바닥이 이어진 닫힌 부피다. 컵 재질에는 사진의 흐린 플라스틱을 근사하는 8% Lambert 계면 반사 혼합을 쓴다. 거친 유전체 microfacet 또는 부피 산란을 푼 결과는 아니다. 바닥과 정확히 겹치는 경계는 작은 간격으로 분리했고, 같은 거리의 교차점은 삼각형 ID 순서로 고정해 가속 순서에 따른 결과 차이를 막았다.
+컵은 내벽·외벽·바닥·입구 띠가 이어진 속이 빈 닫힌 메시다. 물도 수면의 작은 meniscus, 옆면, 바닥이 이어진 닫힌 부피다. 컵의 플라스틱 내부에서는 지수분포로 다음 산란 거리를 뽑고, 경계 전에 산란하면 균일한 구면 방향으로 경로를 이어 간다. 이 균질·등방성 부피 산란과 8% Lambert 계면 반사 혼합으로 뿌연 반투명을 표현한다. 경계 굴절과 RGB Beer 흡수는 유지하며 거친 유전체 microfacet 모델은 사용하지 않는다. 바닥과 정확히 겹치는 경계는 작은 간격으로 분리했고, 같은 거리의 교차점은 삼각형 ID 순서로 고정해 가속 순서에 따른 결과 차이를 막았다.
 
-기본 장면은 12,196개 삼각형이며 카메라와 UV는 HW4의 보정값을 이어받는다. 실제 장면에 투명한 컵·물과 광택 PVC·포장지가 있으므로 별도 합성 구체를 추가하지 않았다. `scene.json`에서 카메라, 광원 radiance, 재질 반사율·광택·굴절률·흡수 계수를 바꿀 수 있다. 재질값은 사진에 맞춘 조절값이며 실측 데이터가 아니다.
+기본 장면은 12,196개 삼각형이며 카메라와 UV는 HW4의 보정값을 이어받는다. 실제 장면에 투명한 컵·물과 광택 PVC·포장지가 있으므로 별도 합성 구체를 추가하지 않았다. `scene.json`에서 카메라, 광원 radiance, 재질 반사율·광택·굴절률·흡수·산란 계수를 바꿀 수 있다. `plastic.scattering`은 장면 길이 단위당 산란 계수이며 0이면 기존의 맑은 유전체 경로다. 천장 광원의 `directional_power`는 `L_e(theta) = L_peak * cos(theta)^power`로 수직 아래 방향에 빛을 모으며, 생략하거나 0으로 설정하면 기존의 일정 radiance 면 광원이다. 광원 크기·위치와 바닥/나무 재질은 이번 보정에서 바꾸지 않았다. 모든 보정값은 사진에 맞춘 유효 매개변수이며 실측 데이터가 아니다.
 
 ## 기능별 비교
 
@@ -117,7 +138,7 @@ python main.py benchmark --repeats 3 --save-linear
 python -m unittest discover -s tests -v
 ```
 
-광학 공식, 전반사와 매질 스택, 양면 삼각형/AABB 교차, 컵·물 메시의 닫힘과 바깥쪽 winding, BVH/전체 순회 교차 일치, 같은 거리의 교차점 처리, bilinear UV 방향, DOF 초점면, 고정 seed 재현성 및 실제 렌더 동등성을 확인한다. 독립적인 작은 장면에서는 실제 emitter까지의 반사 경로, 유전체 앞/뒤 경계를 모두 통과하는 경로, umbra/penumbra/완전 조명 영역 및 경로 제한 시 직접광 에너지 일치를 추가로 검사한다.
+광학 공식, 전반사와 매질 스택, 양면 삼각형/AABB 교차, 컵·물 메시의 닫힘과 바깥쪽 winding, BVH/전체 순회 교차 일치, 같은 거리의 교차점 처리, bilinear UV 방향, DOF 초점면, 고정 seed 재현성 및 실제 렌더 동등성을 확인한다. 독립적인 작은 장면에서는 실제 emitter까지의 반사 경로, 유전체 앞/뒤 두 경계를 통과하는 경로, umbra/penumbra/완전 조명 영역 및 경로 제한 시 직접광 에너지 일치를 추가로 검사한다. 부피 산란은 자유 비행 거리의 소광 분포, 위상함수의 정규화, 산란 없는 직결광의 감쇠, 자체 발광 없는 매질의 직접광 수신, 얇은 셸의 광학 길이와 굴절률 보정을 확인한다.
 
 ## 코드 위치
 
@@ -125,6 +146,7 @@ python -m unittest discover -s tests -v
 - `code/scene.py`, `scene.json`: 장면/재질/자산 로딩과 메시 구성
 - `code/bvh.py`: SAH 구축 및 두 종류 교차 검색
 - `code/tracer.py`, `sampling.py`: 카메라, 광학, BSDF, 광원, 경로 적분과 CPU 병렬화
+- `code/volume.py`: 균질 플라스틱의 산란 거리·등방성 위상함수 및 얇은 셸 광학 길이 근사
 - `code/cup_geometry.py`, `water_surface.py`: 실제 경계 메시 생성
 - `code/denoise.py`: albedo로 나눈 조명을 normal/depth/material guide와 샘플 분산으로 여과하는 à trous 필터
 - `code/image_io.py`, `experiments.py`, `cli.py`: 출력·비교·시간 측정·CLI
@@ -132,7 +154,7 @@ python -m unittest discover -s tests -v
 
 ## 남아 있는 근사와 제출물 범위
 
-유전체 그림자는 광원 샘플까지 직선으로 연결한 경로에 Fresnel과 흡수를 누적한다. 이 경로를 굴절시켜 광원까지 연결하는 caustic 적분기는 구현하지 않았으므로 집중된 굴절 무늬는 정확히 계산하지 않는다. 분산, 물리적 볼륨 산란, 모션 블러도 포함하지 않는다. 카메라에서 시작한 광선의 반사·굴절은 실제 삼각형 경계에서 계산한다.
+유전체 그림자는 광원 샘플까지 직선으로 연결한 경로에 Fresnel·흡수·산란 소광을 누적한다. 산란점에서 광원으로 직접 연결할 때는 뿌연 플라스틱 경계의 수직 입사 Fresnel, 굴절률 제곱 보정과 메시에서 얻은 셸 두께에 따른 광학 길이를 사용한다. 이는 굴절 경계를 포함하는 직접광의 근사이며 정확한 굴절 caustic 적분기나 편향 없는 완전한 부피 적분기는 아니다. 카메라에서 시작한 경로의 자유 비행과 경계 반사·굴절은 실제 부피와 삼각형 경계에서 계산한다. 파장별 분산, 이방성 위상함수, 모션 블러는 포함하지 않는다.
 
 낮은 spp의 간접광에는 Monte Carlo 노이즈가 남는다. `--denoise`는 albedo/normal/depth/material 안내를 쓰는 편향된 후처리이며, 미세 반사나 초점 흐림을 부드럽게 할 수 있다. 원본 PNG/NPY를 항상 함께 보존하고, 성능 비교와 기본 기능별 비교에는 필터를 적용하지 않는다.
 

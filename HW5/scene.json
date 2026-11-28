@@ -11,19 +11,20 @@
     "center": [1.45, 3.002, -1.5],
     "width": 0.6,
     "depth": 0.6,
-    "radiance": [79.17, 89.72, 105.56]
+    "radiance": [79.17, 89.72, 105.56],
+    "directional_power": 1.45
   },
   "exposure": 2.4,
   "materials": {
-    "back": {"color": [0.43, 0.41, 0.44], "specular": 0.008, "exponent": 24.0},
+    "back": {"color": [0.625, 0.72, 0.82], "specular": 0.035, "exponent": 32.0},
     "floor": {"color": [0.65, 0.73, 0.85], "specular": 0.01, "exponent": 32.0},
-    "ceiling": {"color": [0.68, 0.68, 0.68], "specular": 0.16, "exponent": 24.0},
-    "red": {"color": [0.42, 0.018, 0.025], "specular": 0.09, "exponent": 18.0},
-    "green": {"color": [0.008, 0.095, 0.03], "specular": 0.09, "exponent": 18.0},
+    "ceiling": {"color": [0.70, 0.83, 0.85], "specular": 0.14, "exponent": 28.0},
+    "red": {"color": [0.693, 0.0704, 0.0825], "specular": 0.16, "exponent": 32.0},
+    "green": {"color": [0.057, 0.31, 0.15], "specular": 0.18, "exponent": 48.0},
     "mint": {"color": [0.20, 0.73, 0.43], "specular": 0.03, "exponent": 9.0},
     "ground": {"color": [0.30, 0.19, 0.10], "specular": 0.0, "exponent": 16.0},
     "box": {"color": [0.80, 0.80, 0.84], "specular": 0.045, "exponent": 20.0},
-    "plastic": {"color": [0.72, 0.74, 0.77], "ior": 1.49, "absorption": [0.10, 0.06, 0.025], "diffuse_interface": 0.08},
+    "plastic": {"color": [0.85, 0.86, 0.88], "ior": 1.49, "absorption": [0.10, 2.3, 3.0], "diffuse_interface": 0.08, "scattering": 14.0},
     "water": {"ior": 1.333, "absorption": [0.18, 0.07, 0.035]}
   }
 }

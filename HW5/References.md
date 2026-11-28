@@ -6,6 +6,8 @@
   - 직접 광원 샘플링, BSDF 샘플링과 MIS, 경로 처리 및 Russian roulette 개념. 이 구현은 단일 사각형 면 광원과 RGB 재질을 사용하며 책의 코드를 가져오지 않았다.
 - [PBRT 4e: Dielectric BSDF](https://pbr-book.org/4ed/Reflection_Models/Dielectric_BSDF)
   - 비편광 Fresnel, Snell 굴절, 전반사, radiance transport의 굴절률 제곱 보정 개념. 여기서는 매끄러운 경계만 추적하며 거친 유전체 microfacet 모델은 구현하지 않았다.
+- [PBRT 4e: Volume Scattering Integrators](https://pbr-book.org/4ed/Light_Transport_II_Volume_Rendering/Volume_Scattering_Integrators)
+  - 균질 매질의 자유 비행 거리 샘플링과 위상함수 개념. `volume.py`와 경로 루프를 직접 작성했으며 RGB 흡수·스칼라 산란·등방성 위상함수를 쓴다. 굴절 셸을 지나는 직접광은 수직 입사 Fresnel과 얇은 셸 광학 길이로 별도 근사한다.
 - [PBRT 4e: Bounding Volume Hierarchies](https://pbr-book.org/4ed/Primitives_and_Intersection_Acceleration/Bounding_Volume_Hierarchies)
   - AABB 계층과 SAH 분할 개념. 여기서는 12-bin SAH, 기본 4개 이하 삼각형 leaf, 평탄화 배열, 가까운 노드 우선 순회를 직접 구현했다.
 - Möller and Trumbore, [Fast, Minimum Storage Ray/Triangle Intersection](https://doi.org/10.1080/10867651.1997.10487468), 1997.

@@ -1,0 +1,37 @@
+{
+  "resolution": [
+    640,
+    480
+  ],
+  "sampling_multiplier": 8,
+  "same_scene_and_options_except_spp": true,
+  "original_256": {
+    "path": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_material_match.png",
+    "spp": 256,
+    "render_seconds": 78.31079249980394,
+    "denoising": null,
+    "sha256": "9d01f4d6d28c0ac71853df0ca18454fe78b001dc2d20c49501d3a4a85c4f6f34"
+  },
+  "gentle_256": {
+    "path": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_material_match_denoised_soft.png",
+    "spp": 256,
+    "render_seconds": 79.71980469999835,
+    "denoising": {
+      "method": "albedo-demodulated, normal/depth/material-guided a trous",
+      "iterations": 2,
+      "strength": 0.8,
+      "seconds_including_jit": 0.26285890000872314,
+      "biased_filter": true,
+      "raw_render_retained": true
+    },
+    "sha256": "fe74db5cfbb37533f43e3dbdaaad38880aba1b14e57097123aeb135fa0cc85dc"
+  },
+  "raw_2048": {
+    "path": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_material_match_ss2048.png",
+    "spp": 2048,
+    "render_seconds": 630.5800182998646,
+    "denoising": null,
+    "sha256": "61beef3e1d25ff18725848fbfd2e89e03b8f357463cf793def58fef6071b5688"
+  },
+  "comparison_cup_enlargement": "Nearest-neighbor, same coordinates for all images"
+}

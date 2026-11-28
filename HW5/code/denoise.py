@@ -85,7 +85,16 @@ def atrous_pass(color, variance, normals, depth, ids, step):
     return result, result_var
 
 
-def denoise(linear, variance, scene, config, options, iterations=3):
+def denoise(linear, variance, scene, config, options, iterations=2, strength=0.8):
+    """Filter a copy, then retain some unfiltered radiance to preserve detail.
+
+    strength=1 uses the full filter; strength=0 returns the input unchanged.
+    Fewer iterations avoid the largest spatial kernels around thin highlights.
+    """
+    if not isinstance(iterations, int) or not 1 <= iterations <= 5:
+        raise ValueError("denoise iterations must be an integer from 1 to 5")
+    if not math.isfinite(strength) or not 0.0 <= strength <= 1.0:
+        raise ValueError("denoise strength must be finite and in [0, 1]")
     started = time.perf_counter()
     camera = camera_buffer(config, options)
     # Center-lens guides preserve a consistent focus plane; the raw DOF image
@@ -95,6 +104,9 @@ def denoise(linear, variance, scene, config, options, iterations=3):
     color, var = linear / albedo, variance / (albedo * albedo)
     for level in range(iterations):
         color, var = atrous_pass(color, var, normals, depth, ids, 2 ** level)
-    return np.maximum(0., color * albedo), {"method": "albedo-demodulated, normal/depth/material-guided a trous",
-                                          "iterations": iterations, "seconds_including_jit": time.perf_counter() - started,
-                                          "biased_filter": True, "raw_render_retained": True}
+    filtered = np.maximum(0., color * albedo)
+    result = linear + strength * (filtered - linear)
+    return result, {"method": "albedo-demodulated, normal/depth/material-guided a trous",
+                    "iterations": iterations, "strength": strength,
+                    "seconds_including_jit": time.perf_counter() - started,
+                    "biased_filter": True, "raw_render_retained": True}

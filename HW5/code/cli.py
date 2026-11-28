@@ -53,6 +53,10 @@ def make_parser():
     single.add_argument("--pass-spp", type=int, default=8, help="samples per progress/checkpoint pass")
     single.add_argument("--checkpoint", action="store_true", help="save a progressive preview after each pass")
     single.add_argument("--denoise", action="store_true", help="save a guided-filter copy as *_denoised.png; retains raw render")
+    single.add_argument("--denoise-strength", type=float, default=0.8,
+                        help="filtered fraction in [0,1]; used with --denoise (default: 0.8)")
+    single.add_argument("--denoise-iterations", type=int, choices=range(1, 6), default=2,
+                        help="a trous passes; used with --denoise (default: 2)")
     compare = commands.add_parser("compare", help="render feature ablations and photograph/HW4 comparison")
     _common(compare)
     compare.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "comparison")
@@ -99,6 +103,8 @@ def main(argv=None):
             raise ValueError("exposure must be positive and finite")
         if args.command == "render" and args.pass_spp < 1:
             raise ValueError("pass-spp must be positive")
+        if args.command == "render" and (not math.isfinite(args.denoise_strength) or not 0 <= args.denoise_strength <= 1):
+            raise ValueError("denoise-strength must be finite and in [0, 1]")
         if args.command == "benchmark" and args.repeats < 1:
             raise ValueError("repeats must be positive")
         if not args.quiet:
@@ -130,7 +136,9 @@ def main(argv=None):
         save_render(args.output, linear, stats, exposure, args.save_linear)
         if args.denoise:
             from denoise import denoise
-            filtered, filter_stats = denoise(linear, aovs["variance"], scene, config, options)
+            filtered, filter_stats = denoise(linear, aovs["variance"], scene, config, options,
+                                             iterations=args.denoise_iterations,
+                                             strength=args.denoise_strength)
             filtered_path = args.output.with_stem(args.output.stem + "_denoised")
             save_render(filtered_path, filtered, {**stats, "denoising": filter_stats}, exposure, args.save_linear)
             print(f"Saved filtered copy: {filtered_path.resolve()}", flush=True)
