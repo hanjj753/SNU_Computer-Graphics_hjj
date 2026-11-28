@@ -1,4 +1,4 @@
-"""Run from any working directory: python HW5/main.py [render|compare|benchmark]."""
+"""Run anywhere: python HW5/main.py [render|compare|benchmark|denoise-file]."""
 
 import sys
 from pathlib import Path

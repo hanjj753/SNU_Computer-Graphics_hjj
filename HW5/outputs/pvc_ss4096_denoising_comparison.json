@@ -1,0 +1,127 @@
+{
+  "source_raw": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_pvc_reflection_ss4096.png",
+  "source_sha256": "85aa4741ac6ac7d4ff457cc9cc8acbb1f92ff87badeb5bc69708081196b4a883",
+  "filtered": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_pvc_reflection_ss4096_denoised.png",
+  "source_spp": 4096,
+  "extra_path_samples": 0,
+  "denoising": {
+    "method": "PNG-derived, material/normal/depth-guided a trous",
+    "iterations": 1,
+    "strength": 0.55,
+    "transparent_material_strength_cap": 0.35,
+    "color_support_sigma": 2.0,
+    "contrast_detail_protection": true,
+    "clipped_pixels_retained": 0,
+    "radiance_source": "Approximate inverse of quantized 8-bit sRGB/Reinhard PNG",
+    "variance_source": "Estimated from same-material 2x2 Haar residuals; not Monte Carlo sample moments",
+    "estimated_sigma_srgb_255_by_material": {
+      "0": [
+        2.223903327758395,
+        2.223903327758437,
+        2.9652044370111934
+      ],
+      "1": [
+        1.4826022185055967,
+        0.741301109252801,
+        0.7413011092527984
+      ],
+      "2": [
+        2.9652044370112143,
+        4.44780665551679,
+        4.4478066555168105
+      ],
+      "3": [
+        1.4826022185056178,
+        1.4826022185056071,
+        1.4826022185056071
+      ],
+      "4": [
+        2.965204437011204,
+        2.2239033277584053,
+        2.2239033277584
+      ],
+      "5": [
+        1.4826022185055967,
+        0.7413011092528193,
+        1.4826022185055967
+      ],
+      "6": [
+        0.7413011092527984,
+        0.5,
+        0.5
+      ],
+      "7": [
+        2.9652044370111934,
+        2.9652044370112143,
+        2.9652044370111934
+      ],
+      "9": [
+        2.223903327758395,
+        1.482602218505602,
+        1.4826022185056178
+      ],
+      "11": [
+        2.965204437011204,
+        0.741301109252801,
+        0.741301109252801
+      ],
+      "13": [
+        1.4826022185055967,
+        0.741301109252801,
+        0.741301109252801
+      ],
+      "14": [
+        1.4826022185055967,
+        0.741301109252801,
+        0.741301109252801
+      ],
+      "15": [
+        0.5,
+        0.5,
+        0.5
+      ]
+    },
+    "seconds_including_scene_and_jit": 2.0588601001072675,
+    "additional_path_samples": 0,
+    "biased_filter": true,
+    "raw_render_retained": true
+  },
+  "time_estimates": {
+    "basis": "Same current CPU, 12 threads, 640x480, same scene/depth/light samples",
+    "formula": "T(S) ~= 1313.9516 seconds * S / 4096",
+    "additional_render_experiments": false,
+    "rows": [
+      {
+        "spp": 4096,
+        "multiplier": 1,
+        "seconds": 1313.951599999913,
+        "measured": true
+      },
+      {
+        "spp": 8192,
+        "multiplier": 2,
+        "seconds": 2627.903199999826,
+        "measured": false
+      },
+      {
+        "spp": 16384,
+        "multiplier": 4,
+        "seconds": 5255.806399999652,
+        "measured": false
+      },
+      {
+        "spp": 32768,
+        "multiplier": 8,
+        "seconds": 10511.612799999304,
+        "measured": false
+      },
+      {
+        "spp": 65536,
+        "multiplier": 16,
+        "seconds": 21023.22559999861,
+        "measured": false
+      }
+    ]
+  },
+  "gpu_execution": "Current njit/prange renderer executes on CPU; CUDA port needed to use an NVIDIA GPU."
+}

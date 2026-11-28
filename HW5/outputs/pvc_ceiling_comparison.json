@@ -1,0 +1,58 @@
+{
+  "before_ceiling": {
+    "color": [
+      0.7,
+      0.83,
+      0.85
+    ],
+    "specular": 0.14,
+    "exponent": 28.0
+  },
+  "after_ceiling": {
+    "color": [
+      0.89,
+      1.0,
+      1.0
+    ],
+    "specular": 0.38,
+    "exponent": 1800.0
+  },
+  "only_changed_material": "ceiling",
+  "other_scene_settings_unchanged": true,
+  "detail_render": {
+    "full_camera_resolution": [
+      640,
+      480
+    ],
+    "viewport_xywh": [
+      182,
+      110,
+      294,
+      85
+    ],
+    "spp": 1024,
+    "max_depth": 24,
+    "diffuse_bounces": 6,
+    "light_samples": 4,
+    "seed": 2026,
+    "raw_comparison": "pvc_ceiling_comparison_raw.png",
+    "filtered_comparison": "pvc_ceiling_comparison.png",
+    "denoising": {
+      "iterations": 2,
+      "strength": 0.8
+    },
+    "crop_camera_ray_match_verified": true
+  },
+  "full_render": {
+    "before": "cornell_material_match_denoised_soft.png",
+    "after_raw": "cornell_pvc_reflection.png",
+    "after_filtered": "cornell_pvc_reflection_denoised.png",
+    "resolution": [
+      640,
+      480
+    ],
+    "spp": 256,
+    "same_options_verified": true,
+    "render_seconds": 80.63797829998657
+  }
+}

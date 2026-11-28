@@ -67,6 +67,12 @@ def make_parser():
     benchmark.set_defaults(width=128, height=96, spp=4, max_depth=12, light_samples=1, diffuse_bounces=3)
     benchmark.add_argument("--repeats", type=int, default=3)
     benchmark.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "benchmark")
+    saved = commands.add_parser("denoise-file", help="gently denoise an existing PNG using its render metadata; no path tracing")
+    saved.add_argument("input", type=Path)
+    saved.add_argument("--output", type=Path)
+    saved.add_argument("--strength", type=float, default=.55)
+    saved.add_argument("--detail-strength", type=float, default=.35)
+    saved.add_argument("--iterations", type=int, choices=range(1, 4), default=1)
     return parser
 
 
@@ -94,6 +100,13 @@ def main(argv=None):
     if args.command == "render" and args.output is None:
         args.output = ROOT / "outputs" / f"cornell_{args.preset}.png"
     try:
+        if args.command == "denoise-file":
+            from postprocess import denoise_saved_png
+            output, stats = denoise_saved_png(args.input, args.output, strength=args.strength,
+                                              detail_strength=args.detail_strength,
+                                              iterations=args.iterations)
+            print(f"Saved {output}\nPNG postprocess {stats['seconds_including_scene_and_jit']:.3f}s; no additional path samples", flush=True)
+            return 0
         options = options_from_args(args)
         if args.threads is not None:
             if not 1 <= args.threads <= get_num_threads():

@@ -236,10 +236,16 @@ def validate_config(config):
             raise ValueError(f"{name}.scattering must be finite and nonnegative")
 
 
-def load_scene(config_path=None):
+def load_scene(config_path=None, *, config=None):
     started = time.perf_counter()
-    config_path = Path(config_path) if config_path else ROOT / "scene.json"
-    config = json.loads(config_path.read_text(encoding="utf-8"))
+    if config_path is not None and config is not None:
+        raise ValueError("Use either a scene config path or a config dictionary")
+    if config is None:
+        config_path = Path(config_path) if config_path else ROOT / "scene.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    else:
+        # Saved renders retain their own scene, even after scene.json is edited.
+        config = json.loads(json.dumps(config))
     validate_config(config)
     source = load_obj(ROOT / "assets" / "models" / "cornell_scene.obj")
     config_mats = config["materials"]

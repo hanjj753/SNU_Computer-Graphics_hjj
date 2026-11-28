@@ -20,7 +20,14 @@ python main.py
 
 ## 생성한 결과
 
-- `outputs/cornell_material_match.png`: 컵의 부피 산란과 벽 색상·광원 배광을 보정한 현재 장면. 640×480, 256 spp 원본이며 denoising을 적용하지 않았다.
+- `outputs/cornell_pvc_reflection.png`, `cornell_pvc_reflection_denoised.png`: 천장 PVC의 반사까지 보정한 현재 장면. 640×480, 256 spp 원본과 2단계·강도 0.8의 필터 사본이다.
+- `outputs/cornell_pvc_reflection_ss4096.png`: 같은 현재 장면을 640×480, 4096 spp로 렌더링한 원본. denoising은 적용하지 않았다. 2048 spp의 두 배 샘플이며 실행 시간은 같은 이름의 JSON에 기록한다.
+- `outputs/cornell_pvc_reflection_ss4096_denoised.png`: 저장된 4096 spp PNG에 한 단계의 보수적인 후처리를 적용한 사본. 전체 혼합은 55%, 컵·물은 최대 35%이며 큰 대비의 세부는 더 약하게 처리한다. PNG에서 복원한 근사 radiance와 추정 노이즈를 쓰며, 실제 샘플 분산을 복구한 결과는 아니다.
+- `outputs/pvc_ss4096_denoising_comparison.png`, `pvc_ss4096_denoising_details.png`: 실제 사진/4096 spp 적용 전/같은 4096 spp 적용 후 비교. 추가 supersampling은 실행하지 않았다.
+- `outputs/pvc_ss4096_comparison.png`, `pvc_ss4096_details.png`: 실제 사진/현재 256 spp 약한 denoising/현재 4096 spp 원본의 비교. 상세 이미지에는 천장과 컵 확대를 포함한다.
+- `outputs/pvc_ceiling_comparison.png`, `pvc_ceiling_comparison_raw.png`: 사진/보정 전/보정 후의 천장 확대. 전후 모두 같은 카메라의 천장 영역을 1024 spp로 따로 계산했다. 첫 파일은 동일한 약한 필터를 적용하고, 두 번째 파일은 필터 없는 원본이다.
+- `outputs/pvc_reflection_comparison.png`: 사진/보정 전/보정 후 전체 장면 비교. 전후 모두 640×480, 256 spp 및 동일한 약한 필터다.
+- `outputs/cornell_material_match.png`: 컵·벽 보정 단계의 장면(천장 반사 보강 전). 640×480, 256 spp 원본이며 denoising을 적용하지 않았다.
 - `outputs/cornell_material_match_denoised.png`, `material_match_denoising_comparison.png`: 같은 256 spp 영상에 기존 3단계 denoising을 적용한 사본과 사진/원본/필터 사본 비교. 필터용 선형 RGB·분산을 동일 설정과 seed로 재생성하고 기존 원본과 픽셀 일치를 확인했다.
 - `outputs/cornell_material_match_denoised_soft.png`: 256 spp 원본에 기본 2단계·강도 0.8의 약한 denoising을 적용한 사본. 필터 결과 80%와 원본 20%를 선형 RGB에서 혼합해 작은 수면 경계와 하이라이트를 남긴다.
 - `outputs/cornell_material_match_ss2048.png`: 같은 장면·해상도에서 2048 spp로 렌더링한 원본. denoising을 적용하지 않는다. 비교는 `outputs/material_match_quality_comparison.png`에 저장한다.
@@ -37,17 +44,38 @@ python main.py
 
 128×96, 4 spp, 3회 교대 실행의 중앙값과 두 선형 RGB 영상의 차이는 `outputs/benchmark/timings.json`을 참조한다. JIT·구축·저장 시간을 제외한 값과 BVH 구축 비용을 구분한다. 검증 결과는 `outputs/verification.json`, 항목별 요구사항 대조는 `REQUIREMENTS.md`에 기록한다.
 
-`cornell_material_match` 이외의 기존 출력·보고서·제출 ZIP은 앞선 재질 설정으로 생성한 기록이다. 현재 기본 설정은 `scene.json`이며 `python main.py`에도 바로 적용된다. 현재 보정 결과를 다시 만들려면 다음을 실행한다.
+현재 기본 설정은 `scene.json`이며 `python main.py`에도 바로 적용된다. 최신 결과는 `cornell_pvc_reflection*`이며 `cornell_material_match*`는 천장 반사 보강 전 기록이다. 기존 보고서·제출 ZIP과 나머지 출력도 앞선 설정으로 생성한 기록이다. 현재 결과를 다시 만들려면 다음을 실행한다.
 
 ```powershell
-python main.py render --width 640 --height 480 --spp 256 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_material_match.png
+python main.py render --width 640 --height 480 --spp 256 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_pvc_reflection.png
 
 # 약한 denoising: 필터 80% + 원본 20%, 작은 커널 두 단계
-python main.py render --width 640 --height 480 --spp 256 --max-depth 24 --diffuse-bounces 6 --denoise --denoise-strength 0.8 --denoise-iterations 2 --output outputs/cornell_material_match.png
+python main.py render --width 640 --height 480 --spp 256 --max-depth 24 --diffuse-bounces 6 --denoise --denoise-strength 0.8 --denoise-iterations 2 --output outputs/cornell_pvc_reflection.png
 
 # denoising 없이 카메라·광원·경로 샘플만 증가
-python main.py render --width 640 --height 480 --spp 2048 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_material_match_ss2048.png
+python main.py render --width 640 --height 480 --spp 2048 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_pvc_reflection_ss2048.png
+
+# 한 단계 높은 4096 spp: 동일 해상도, denoising 없이 렌더링
+python main.py render --width 640 --height 480 --spp 4096 --max-depth 24 --diffuse-bounces 6 --output outputs/cornell_pvc_reflection_ss4096.png
+
+# 이미 저장된 PNG의 약한 후처리: 장면과 카메라는 같은 이름의 JSON에서 읽는다.
+# 새 path tracing 없이 1회 필터, 전체 55% / 컵·물 최대 35% 혼합
+python main.py denoise-file outputs/cornell_pvc_reflection_ss4096.png --strength 0.55 --detail-strength 0.35 --iterations 1
 ```
+
+## 샘플 수와 서버 실행
+
+같은 해상도·장면·경로 깊이에서 `--spp`를 `2^N`배 늘리면 렌더링 시간도 대략 `2^N`배다. 현재 PC의 12개 CPU 스레드, 640×480, 4096 spp에서 측정한 1313.95초를 기준으로 `T(S) ≈ 1313.95 × S/4096`초로 추정할 수 있다. 다음 값은 추가 렌더링 없이 계산한 추정이다.
+
+| spp | 현재 CPU 기준 시간 |
+| --- | --- |
+| 4096 | 21분 54초 (실측) |
+| 8192 | 약 44분 |
+| 16384 | 약 1시간 28분 |
+| 32768 | 약 2시간 55분 |
+| 65536 | 약 5시간 50분 |
+
+가로·세로 해상도를 각각 `2^N`배 늘리면 픽셀 수가 `4^N`배가 되므로 같은 spp에서 시간도 대략 `4^N`배다. 서버에서는 해당 CPU에서 측정한 짧은 기준 렌더 시간으로 환산해야 한다. 현재 `njit(parallel=True)`/`prange` 구현은 [CPU 병렬 처리](https://numba.readthedocs.io/en/stable/user/parallel.html)이며 GPU 서버에서도 CPU로 실행된다. NVIDIA GPU를 사용하려면 [CUDA 커널](https://nvidia.github.io/numba-cuda/user/kernels.html) 등의 별도 GPU 구현이 필요하다. 이번 작업에서 GPU 이식이나 높은 spp의 추가 실행은 수행하지 않았다.
 
 ## 렌더링 옵션
 
@@ -104,6 +132,8 @@ python main.py render --preset draft --aperture 0.045 --focus-distance 6.9 --out
 
 기본 장면은 12,196개 삼각형이며 카메라와 UV는 HW4의 보정값을 이어받는다. 실제 장면에 투명한 컵·물과 광택 PVC·포장지가 있으므로 별도 합성 구체를 추가하지 않았다. `scene.json`에서 카메라, 광원 radiance, 재질 반사율·광택·굴절률·흡수·산란 계수를 바꿀 수 있다. `plastic.scattering`은 장면 길이 단위당 산란 계수이며 0이면 기존의 맑은 유전체 경로다. 천장 광원의 `directional_power`는 `L_e(theta) = L_peak * cos(theta)^power`로 수직 아래 방향에 빛을 모으며, 생략하거나 0으로 설정하면 기존의 일정 radiance 면 광원이다. 광원 크기·위치와 바닥/나무 재질은 이번 보정에서 바꾸지 않았다. 모든 보정값은 사진에 맞춘 유효 매개변수이며 실측 데이터가 아니다.
 
+천장 PVC는 반사 강도를 0.14에서 0.38로, Phong 지수를 28에서 1800으로 조정했다. 넓게 퍼지던 반사 lobe가 좁아져 천장 앞쪽에 포장지의 붉은 면과 무늬가 비친다. 천장 색상도 함께 보정해 전체 밝기를 유지했다. 반사 광선은 장면의 실제 삼각형과 인쇄 텍스처를 조회하며, 재질값은 사진에 맞춘 조절값이다.
+
 ## 기능별 비교
 
 ```powershell
@@ -149,6 +179,7 @@ python -m unittest discover -s tests -v
 - `code/volume.py`: 균질 플라스틱의 산란 거리·등방성 위상함수 및 얇은 셸 광학 길이 근사
 - `code/cup_geometry.py`, `water_surface.py`: 실제 경계 메시 생성
 - `code/denoise.py`: albedo로 나눈 조명을 normal/depth/material guide와 샘플 분산으로 여과하는 à trous 필터
+- `code/postprocess.py`: 저장된 PNG의 색 변환 역산, Haar 잔차 기반 노이즈 추정과 세부 보존 후처리. 원본 PNG를 보존한다.
 - `code/image_io.py`, `experiments.py`, `cli.py`: 출력·비교·시간 측정·CLI
 - `References.md`, `assets/README.md`: 참고 자료, AI 사용, 자산 출처
 

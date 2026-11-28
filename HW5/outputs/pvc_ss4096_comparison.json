@@ -1,0 +1,52 @@
+{
+  "resolution": [
+    640,
+    480
+  ],
+  "same_scene_and_options_except_spp": true,
+  "photo": "D:\\Workspace\\Computer Graphics\\HW5\\pictures\\Cornell Box.jpg",
+  "gentle_denoising": {
+    "path": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_pvc_reflection_denoised.png",
+    "spp": 256,
+    "denoising": {
+      "method": "albedo-demodulated, normal/depth/material-guided a trous",
+      "iterations": 2,
+      "strength": 0.8,
+      "seconds_including_jit": 0.0862342999316752,
+      "biased_filter": true,
+      "raw_render_retained": true
+    },
+    "render_seconds": 80.63797829998657,
+    "sha256": "ca4b65e1e3f0276819d9794c0e2c99a4b1f705250f118d56a1a466d1808f0c1b"
+  },
+  "raw_supersampling": {
+    "path": "D:\\Workspace\\Computer Graphics\\HW5\\outputs\\cornell_pvc_reflection_ss4096.png",
+    "spp": 4096,
+    "denoising": null,
+    "render_seconds": 1313.951599999913,
+    "sha256": "85aa4741ac6ac7d4ff457cc9cc8acbb1f92ff87badeb5bc69708081196b4a883"
+  },
+  "sample_multiplier_vs_2048": 2,
+  "sample_multiplier_vs_gentle_256": 16,
+  "details": {
+    "box_crop_xyxy": [
+      176,
+      107,
+      475,
+      413
+    ],
+    "ceiling_crop_xyxy": [
+      182,
+      110,
+      476,
+      195
+    ],
+    "cup_crop_xyxy": [
+      245,
+      307,
+      310,
+      381
+    ],
+    "cup_enlargement": "nearest-neighbor"
+  }
+}
